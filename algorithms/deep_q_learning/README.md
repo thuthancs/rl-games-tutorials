@@ -1,6 +1,15 @@
 # Deep Q-Learning in Flappy Bird
 
 Paper: https://arxiv.org/abs/1312.5602
+Code: https://github.com/google-deepmind/dqn
+
+## Plan
+
+1. [x] Preprocessing: Implement and test preprocessing step (encode an RGB frame, rescale to 84x84)
+       ![preprocessing_step](./illustrations/preprocessing_step.svg)
+2. [x] DQN: Implement a class for DQN architecture using PyTorch
+       ![dqn](./illustrations/dqn.svg)
+3. [ ] Training:
 
 ## Progress
 
@@ -20,7 +29,7 @@ Paper: https://arxiv.org/abs/1312.5602
   7. Then, we save (phi - 4 frames, a, r, next states, game state - done or not) in the replay memory array
   8. Then, we same a minibatch of 32 experiences from the large array
 
-## TODO
+## Milestones
 
 - [ ] Implement Q Network with random weights
 - [ ] Implement replay memory
