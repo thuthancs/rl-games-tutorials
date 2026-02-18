@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Agent Reinforcement Learning for Cooperative Fireboy & Watergirl - Tinker & Play</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="../index.html" class="site-title">Tinker & Play</a>
+    <nav class="site-nav">
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <article class="blog-article">
+    <header class="article-header">
+      <h1 class="article-title">Multi-Agent Reinforcement Learning for Cooperative Fireboy & Watergirl</h1>
+      <p class="article-subtitle">Exploring how multiple agents can learn to cooperate in a shared environment, using the classic puzzle platformer Fireboy & Watergirl as our testbed.</p>
+      <div class="article-meta">
+        <div class="meta-column">
+          <span class="meta-label">Author</span>
+          <span class="meta-value">Thu Than</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Published</span>
+          <span class="meta-value">Feb. 19, 2026</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <aside class="article-toc">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#multi-agent-rl">Multi-Agent Reinforcement Learning</a></li>
+            <li><a href="#fireboy-watergirl">The Fireboy & Watergirl Game</a></li>
+            <li><a href="#cooperation">Designing for Cooperation</a></li>
+            <li><a href="#approaches">Learning Approaches</a></li>
+            <li><a href="#implementation">Implementation Notes</a></li>
+            <li><a href="#results">Results</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="article-content">
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>Fireboy & Watergirl is a cooperative puzzle platformer where two characters must work together to reach their respective goals. Fireboy can only traverse fire elements; Watergirl can only traverse water elements. They often need to activate switches or hold doors open for each other.</p>
+          <p>This game is an ideal setting for multi-agent reinforcement learning (MARL) because success requires explicit coordination. Neither agent can solve the puzzles alone.</p>
+        </section>
+
+        <section id="multi-agent-rl">
+          <h2>Multi-Agent Reinforcement Learning</h2>
+          <p>In MARL, multiple agents act in a shared environment. Each agent has its own policy and receives its own observations and rewards. The key challenge: the environment is non-stationary from each agent's perspective—other agents are learning and changing their behavior.</p>
+          <p>We distinguish between cooperative (shared goal), competitive (zero-sum), and mixed settings. Fireboy & Watergirl is cooperative: both agents benefit from reaching the end together.</p>
+        </section>
+
+        <section id="fireboy-watergirl">
+          <h2>The Fireboy & Watergirl Game</h2>
+          <p>We'll use or build an environment that captures the core mechanics: two controllable characters, element-based obstacles, switches, doors, and level layouts. The state includes both characters' positions and the state of interactive elements.</p>
+          <p>Actions are independent per agent (left, right, jump, or special). The reward can be sparse (only on level completion) or shaped (progress toward goals, staying alive).</p>
+        </section>
+
+        <section id="cooperation">
+          <h2>Designing for Cooperation</h2>
+          <p>Reward design is critical. A shared reward (both agents get +1 when both reach goals) encourages cooperation. Individual rewards can lead to selfish behavior. We might use reward shaping to guide early learning.</p>
+          <p>Communication or centralized training can help. In centralized training with decentralized execution (CTDE), we train with full state access but deploy with each agent seeing only its local observations.</p>
+        </section>
+
+        <section id="approaches">
+          <h2>Learning Approaches</h2>
+          <p>We can use independent Q-learning (IQL), where each agent treats others as part of the environment. Simple but can be unstable. Alternatively, value decomposition methods (VDN, QMIX) learn a joint value function from individual agent values.</p>
+          <p>Policy gradient methods like MAPPO extend PPO to multi-agent settings. We'll compare a few approaches and discuss their trade-offs.</p>
+        </section>
+
+        <section id="implementation">
+          <h2>Implementation Notes</h2>
+          <p>Implementation involves a multi-agent environment wrapper, separate (or shared) networks per agent, and a training loop that collects experience from both agents. We need to handle variable-length episodes and partial observability.</p>
+          <p>Curriculum learning can help: start with simpler levels where cooperation is minimal, then progress to puzzles that require tight coordination.</p>
+        </section>
+
+        <section id="results">
+          <h2>Results</h2>
+          <p>We expect the agents to learn basic coordination: waiting for each other, activating switches in sequence, and avoiding hazards. Full level completion may require extensive training. We'll analyze learned behaviors and failure modes.</p>
+        </section>
+      </div>
+    </div>
+  </article>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
+  </footer>
+</body>
+</html>

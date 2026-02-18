@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training AI Agent to Play Flappy Bird Using Deep Q-Learning - Tinker & Play</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="post-flappy-bird">
+  <header class="site-header">
+    <a href="../index.html" class="site-title">Tinker & Play</a>
+    <nav class="site-nav">
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <article class="blog-article">
+    <header class="article-header">
+      <h1 class="article-title">Training Agent to Play Flappy Bird Using Deep Q-Learning</h1>
+      <p class="article-subtitle">A hands-on guide to building a DQN agent that learns to play Flappy Bird from pixel
+        observations and reward signals.</p>
+      <figure class="article-figure">
+        <img src="../images/flappy_bird/flappy_bird_state_agent.gif" alt="Flappy Bird state agent">
+      </figure>
+      <div class="article-meta">
+        <div class="meta-column">
+          <span class="meta-label">Author</span>
+          <span class="meta-value">Thu Than</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Published</span>
+          <span class="meta-value">Feb. 18, 2026</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <aside class="article-toc">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#from-tabular-to-deep">From Tabular to Deep Q-Learning</a></li>
+            <li><a href="#flappy-bird-env">The Flappy Bird Environment</a></li>
+            <li><a href="#preprocessing">Frame Preprocessing</a></li>
+            <li><a href="#dqn-architecture">DQN Architecture</a></li>
+            <li><a href="#training">Training the Agent</a></li>
+            <li><a href="#results">Results</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="article-content">
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>Flappy Bird is a deceptively simple game: tap to flap, avoid the pipes. But for an AI agent, learning from
+            raw pixels presents a significant challenge. The state space is enormous, making tabular Q-learning
+            impractical. Enter Deep Q-Networks (DQN).</p>
+          <p>In this tutorial, we combine Convolutional Neural Networks with Q-learning to create an agent that learns
+            to play Flappy Bird directly from screen pixels. This approach mirrors the methodology that achieved
+            human-level performance on Atari games.</p>
+        </section>
+
+        <section id="from-tabular-to-deep">
+          <h2>From Tabular to Deep Q-Learning</h2>
+          <p>Tabular Q-learning stores a value for every state-action pair. With high-dimensional observations like
+            images, the state space is effectively infinite. Deep Q-Learning solves this by using a neural network to
+            approximate the Q-function.</p>
+          <p>The network takes a state (or stack of frames) as input and outputs Q-values for each possible action. We
+            train it by minimizing the temporal difference error between predicted and target Q-values.</p>
+        </section>
+
+        <section id="flappy-bird-env">
+          <h2>The Flappy Bird Environment</h2>
+          <p>We'll use a Python implementation of Flappy Bird that provides a Gym-like interface. The observation can be
+            raw pixels (e.g., 84x84 grayscale) or a simplified state. The action space is binary: flap or do nothing.
+          </p>
+          <p>Reward design matters: +1 for passing through a pipe, -1 for crashing, and perhaps a small positive reward
+            for staying alive to encourage exploration.</p>
+        </section>
+
+        <section id="preprocessing">
+          <h2>Frame Preprocessing</h2>
+          <p>Raw game frames are typically 288x512 RGB. We resize to 84x84, convert to grayscale, and stack the last 4
+            frames to capture motion. This preprocessing reduces dimensionality and gives the agent a sense of velocity.
+          </p>
+          <p>Normalizing pixel values to [0, 1] or standardizing can also help training stability.</p>
+        </section>
+
+        <section id="dqn-architecture">
+          <h2>DQN Architecture</h2>
+          <p>Our network has three convolutional layers followed by fully connected layers. The conv layers extract
+            spatial features (bird, pipes, gaps); the FC layers map to Q-values for each action.</p>
+          <p>Key DQN innovations we'll implement: experience replay (storing transitions and sampling random batches)
+            and a target network (a copy of the Q-network updated periodically to stabilize learning).</p>
+        </section>
+
+        <section id="training">
+          <h2>Training the Agent</h2>
+          <p>The training loop: observe state, select action (epsilon-greedy), execute in environment, store transition
+            in replay buffer, sample batch, compute loss, update network. We decay epsilon from 1.0 to 0.01 over
+            training.</p>
+          <p>Hyperparameters to tune: learning rate, batch size, replay buffer size, target network update frequency,
+            and discount factor gamma.</p>
+        </section>
+
+        <section id="results">
+          <h2>Results</h2>
+          <p>After training, the agent should learn to navigate through pipes consistently. We can visualize the learned
+            policy and analyze which features the network attends to. The trained agent demonstrates that value-based
+            methods can handle complex visual inputs when combined with deep learning.</p>
+        </section>
+      </div>
+    </div>
+  </article>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
+  </footer>
+</body>
+
+</html>
