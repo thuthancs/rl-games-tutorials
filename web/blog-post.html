@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog Post - Tinker & Play</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="index.html" class="site-title">Tinker & Play</a>
+    <nav class="site-nav">
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <article class="blog-article">
+    <header class="article-header">
+      <h1 class="article-title">Understanding Convolutions on Graphs</h1>
+      <p class="article-subtitle">Understanding the building blocks and design choices of graph neural networks.</p>
+      <div class="article-meta">
+        <div class="meta-column">
+          <span class="meta-label">Authors</span>
+          <span class="meta-value">Ameya Daigavane, Balaraman Ravindran, Gaurav Aggarwal</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Affiliations</span>
+          <span class="meta-value">Google Research</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Published</span>
+          <span class="meta-value">Sept. 2, 2021</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">DOI</span>
+          <span class="meta-value">10.23915/distill.00032</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <aside class="article-toc">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            <li><a href="#introduction">Introduction</a></li>
+            <li>
+              <a href="#challenges">The Challenges of Computation on Graphs</a>
+              <ul>
+                <li><a href="#lack-of-structure">Lack of Consistent Structure</a></li>
+                <li><a href="#node-order">Node-Order Equivariance</a></li>
+                <li><a href="#scalability">Scalability</a></li>
+              </ul>
+            </li>
+            <li><a href="#problem-setting">Problem Setting and Notation</a></li>
+            <li><a href="#extending-convolutions">Extending Convolutions to Graphs</a></li>
+            <li><a href="#polynomial-filters">Polynomial Filters on Graphs</a></li>
+            <li><a href="#modern-gnn">Modern Graph Neural Networks</a></li>
+            <li><a href="#interactive-gnn">Interactive Graph Neural Networks</a></li>
+            <li><a href="#local-to-global">From Local to Global Convolutions</a></li>
+            <li><a href="#spectral-convolutions">Spectral Convolutions</a></li>
+            <li><a href="#global-propagation">Global Propagation via Graph Embeddings</a></li>
+            <li><a href="#learning-params">Learning GNN Parameters</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="article-content">
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>This article is one of two Distill publications about graph neural networks. Take a look at <a href="#">A Gentle Introduction to Graph Neural Networks</a> [1] for a companion view on many things graph and neural network related.</p>
+          <p>Many systems and interactions in the real world can be naturally represented as graphs: social networks, molecular structures, traffic flows, and knowledge bases, to name a few. Traditional neural networks, however, are designed to operate on grid-like structures such as sequences and images. This mismatch has motivated a growing body of research on graph neural networks (GNNs), which extend the success of deep learning to graph-structured data.</p>
+        </section>
+
+        <section id="challenges">
+          <h2>The Challenges of Computation on Graphs</h2>
+          <p>Graphs present unique challenges for neural network architectures. Unlike images or sequences, graphs have no canonical ordering of nodes, and their structure can vary significantly between instances.</p>
+          <section id="lack-of-structure">
+            <h3>Lack of Consistent Structure</h3>
+            <p>Graphs can have arbitrary numbers of nodes and edges, with varying degrees and connectivity patterns. This irregularity makes it difficult to apply standard convolutional operations directly.</p>
+          </section>
+          <section id="node-order">
+            <h3>Node-Order Equivariance</h3>
+            <p>Meaningful operations on graphs should not depend on how we label or order the nodes. A good graph neural network should produce the same output regardless of node permutation.</p>
+          </section>
+          <section id="scalability">
+            <h3>Scalability</h3>
+            <p>Real-world graphs can be massive, with millions or billions of nodes. Efficient algorithms must leverage sparsity and local structure to scale to these sizes.</p>
+          </section>
+        </section>
+
+        <section id="problem-setting">
+          <h2>Problem Setting and Notation</h2>
+          <p>We formalize the problem of learning on graphs and introduce the notation used throughout this article. A graph is defined as G = (V, E) where V is the set of vertices and E is the set of edges.</p>
+        </section>
+
+        <section id="extending-convolutions">
+          <h2>Extending Convolutions to Graphs</h2>
+          <p>The key insight is to define convolution in a way that respects the graph structure. We explore several approaches, from spatial methods that aggregate information from neighbors to spectral methods that operate in the Fourier domain.</p>
+        </section>
+
+        <section id="polynomial-filters">
+          <h2>Polynomial Filters on Graphs</h2>
+          <p>Polynomial filters provide a flexible framework for designing graph convolutions. By expressing filters as polynomials of the graph Laplacian, we can control the receptive field and ensure desirable properties like locality.</p>
+        </section>
+
+        <section id="modern-gnn">
+          <h2>Modern Graph Neural Networks</h2>
+          <p>Contemporary GNN architectures such as GCN, GAT, and GraphSAGE have achieved state-of-the-art results on many benchmarks. We discuss their design principles and how they address the challenges outlined earlier.</p>
+        </section>
+
+        <section id="interactive-gnn">
+          <h2>Interactive Graph Neural Networks</h2>
+          <p>Interactive visualizations can help build intuition for how GNNs process graph-structured data. We provide interactive demos that illustrate message passing and feature aggregation.</p>
+        </section>
+
+        <section id="local-to-global">
+          <h2>From Local to Global Convolutions</h2>
+          <p>Local convolutions aggregate information from immediate neighbors. To capture global structure, we need mechanisms that propagate information across the entire graph. We explore techniques like multi-hop aggregation and attention.</p>
+        </section>
+
+        <section id="spectral-convolutions">
+          <h2>Spectral Convolutions</h2>
+          <p>Spectral methods define convolution in the spectral domain of the graph Laplacian. This perspective connects graph convolutions to classical signal processing and provides theoretical guarantees.</p>
+        </section>
+
+        <section id="global-propagation">
+          <h2>Global Propagation via Graph Embeddings</h2>
+          <p>Graph embeddings provide a way to capture global structure in a fixed-dimensional representation. We discuss how these embeddings can be used to enhance GNN architectures.</p>
+        </section>
+
+        <section id="learning-params">
+          <h2>Learning GNN Parameters</h2>
+          <p>Training GNNs requires careful consideration of optimization, regularization, and scalability. We cover practical tips and common pitfalls when training graph neural networks.</p>
+        </section>
+      </div>
+    </div>
+  </article>
+
+  <footer class="site-footer">
+    <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
+  </footer>
+</body>
+</html>

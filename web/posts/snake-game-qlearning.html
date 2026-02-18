@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Training AI Agent to Play Snake Game Using Q-Learning - Tinker & Play</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="../index.html" class="site-title">Tinker & Play</a>
+    <nav class="site-nav">
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <article class="blog-article">
+    <header class="article-header">
+      <h1 class="article-title">Training AI Agent to Play Snake Game Using Q-Learning</h1>
+      <p class="article-subtitle">Understanding the fundamentals of reinforcement learning. Implement a Q-learning agent from scratch in Python for a simple 2D game environment.</p>
+      <div class="article-figure-group">
+        <figure class="article-figure article-figure--primary">
+          <img src="../images/snake_game/learning_trajectories.gif" alt="Snake Q-learning learning trajectories">
+        </figure>
+        <figure class="article-figure article-figure--secondary">
+          <img src="../images/snake_game/training_episodes.gif" alt="Snake Q-learning training episodes">
+        </figure>
+      </div>
+      <div class="article-meta">
+        <div class="meta-column">
+          <span class="meta-label">Author</span>
+          <span class="meta-value">Thu Than</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Published</span>
+          <span class="meta-value">Feb. 17, 2026</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <aside class="article-toc">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            <li><a href="#introduction">Introduction</a></li>
+            <li>
+              <a href="#rl-basics">RL Core Components</a>
+              <ul>
+                <li><a href="#game-rules">Game Rules</a></li>
+                <li><a href="#valid-game-states">Valid Game States</a></li>
+              </ul>
+            </li>
+            <li>
+              <a href="#q-learning">Q-Learning Algorithm</a>
+              <ul>
+                <li><a href="#reward-penalty">Reward and Penalty (Q-Table)</a></li>
+                <li><a href="#training-algorithm">Training Algorithm</a></li>
+              </ul>
+            </li>
+            <li><a href="#snake-environment">The Snake Game Environment</a></li>
+            <li><a href="#implementation">Implementation</a></li>
+            <li><a href="#results">Results and Takeaways</a></li>
+            <li><a href="#references">References</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="article-content">
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>Reinforcement learning (RL) is a subfield of artificial intelligence (AI) that teaches a machine to maximize a numerical reward through <strong>direct interaction with its environment</strong>. 
+            This is in contrast to supervised learning, which uses labeled input data to train a machine to make predictions on unseen data, and unsupervised learning, which discovers hidden patterns in unlabeled data <a href="#ref-1" class="footnote-ref">[1]</a>. 
+            Reinforcement learning has been applied in different contexts, such as reinforcement learning from human feedback (RLHF) used to improve large language models’ responses following users’ intent <a href="#ref-2" class="footnote-ref">[2]</a>, autonomous vehicles <a href="#ref-3" class="footnote-ref">[3]</a>, and achieving superhuman performance in complex games such as Go <a href="#ref-4" class="footnote-ref">[4]</a>. 
+          </p>
+          <p>
+            In this tutorial, we will explore the fundamentals of RL including <strong>game states</strong>, <strong>legal actions</strong>, and <strong>reward/penalty</strong> by building a Q-learning agent to play the classic Snake game from scratch.
+          </p>          
+        </section>
+
+        <section id="rl-basics">
+          <h2>RL Core Components</h2>
+          <h3 id="game-rules">Game Rules</h3>
+          <figure class="article-figure">
+            <img src="../images/snake_game/game_rules.svg" alt="Snake game rules illustration">
+            <figcaption><strong>Figure 1.</strong>The snake can move in four directions: up, down, left, and right. If it eats the food, it grows longer. The snake dies if it hits the wall or itself (self-collision). The snake can grow up to 9 cells long.</figcaption>
+          </figure>
+          <h3 id="valid-game-states">Valid Game States</h3>
+          <p>When playing the snake game, at each time step, the information we want to know is:</p>
+          <ul>
+            <li>Where is the snake's head located?</li>
+            <li>Which direction is the snake's head facing?</li>
+            <li>What is the current body segment of the snake?</li>
+            <li>Where is the food located, non-overlapped with the snake’s body?</li>
+          </ul>
+          <p>The combination of all the above information constitutes a <strong>game state</strong> at a given discrete time step. But why do we need to know all of these? Because it helps the snake make a decision on what to do next, and it enables us to design a reward system that rewards and penalizes the learning agent. For example, if the snake’s head is facing East (→), it will be penalized if it turns in the opposite direction (←) because of self-collision. Similarly, knowing the body segment also helps us detect when the snake hits the wall. </p>
+          <p>Importantly, the snake’s body shape and its head’s direction should not violate the rules of the game. Specifically, the snake’s body shape should consist of continuous/adjacent segments, and the snake’s head direction should be valid for its location. </p>
+          <figure class="article-figure">
+            <img src="../images/snake_game/invalid_game_states_body.svg" alt="Invalid game states illustration">
+            <figcaption><strong>Figure 2.</strong> Examples of invalid game states. The snake's body shapes are disrupted and do not form a continuous adjacent segment.</figcaption>
+          </figure>
+          <figure class="article-figure">
+            <img src="../images/snake_game/invalid_game_states_head_dir.svg" alt="Invalid game states illustration">
+            <figcaption><strong>Figure 3.</strong> Examples of invalid game states. The <span class="text-red">red cells</span> represent the snake’s head, and the arrows show its invalid direction. In the first grid, if the snake's head is located on cell (1,1) for its given shape, then the only valid direction for its head is → (rightward). Note that the snake can turn its head in the arrow direction in the next step, but at the given time step, its direction cannot be in that direction - <i>the direction must represent where it’s coming from in the previous step</i>. Similar logic applies to the other two grids.
+            </figcaption>
+          </figure>
+
+        </section>
+
+        <section id="q-learning">
+          <h2>Q-Learning Algorithm</h2>
+          <h3>Reward and Penalty (Q-Table)</h3>
+          <p>You are tasked with teaching Snaky how to navigate this environment so that it learns which one is a good or bad move given its current state. What would you do? Given that the Snake lives in the computational world, we need to quantify the reward and penalty for it to know which is the good and bad move. It's like giving grades to students in a class.</p>
+          <figure class="article-figure">
+            <img src="../images/snake_game/q_table.svg" alt="Reward and penalty illustration">
+            <figcaption><strong>Figure 4.</strong> Reward and penalty for the snake. The snake is rewarded for eating the food and penalized for dying by hitting the wall or itself. If we keep iterating this process for all valid game states, we will have a table of Q-values for each state-action pair.</figcaption>
+          </figure>
+          <p>This table acts as the Snake's <strong>memory</strong>. To build the memory on how to navigate this environment, the Snake first needs to learn a lot through <strong>trials and errors</strong>. Once the memory is built, the Snake can <strong>look up its memory</strong> to decide which action to take next.</p>
+          <h3>Training Algorithm</h3>
+          <p>The algorithm we're going to use trains Snaky to learn through trials and errors is called Q-learning, which iteratively updates the Q-table (Snaky's memory):</p>
+          <p class="text-center">$$Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha[R_{t+1} + \gamma \max_{a} Q(S_{t+1}, a) - Q(S_t, A_t)]$$</p>
+          <p>Yes, it's this scary formula that helps Snaky learn! Let's unpack each symbol one by one:</p>
+          <ol>
+            <li>$Q(S_t, A_t)$ is the table that stores all values of state-action pairs (i.e., the agent's memory)</li>
+            <li>$\alpha$ (0–1) is the learning rate (i.e., how much should we update the value)</li>
+            <li>$\gamma$ (0–1) is the discounting factor (i.e., how much we value future rewards compared to immediate rewards. Higher γ = more patient/strategic, lower γ = more greedy/shortsighted)</li>
+            <li>$\max_{a} Q(S_{t+1}, a)$ is the maximum value considering all future actions</li>
+          </ol>
+          <p>You might ask why don't we just directly add values like -10 for penalty and +10 for reward at every time step? Why bother applying this <i>complex</i> algorithm?</p>
+          <blockquote>
+            <p>It's all about the <strong>expected future return</strong>, not about immediate rewards. At every step, Snaky needs to answer the question: "If I choose this action now, how good will my future be on average?"</p>
+          </blockquote>
+        </section>
+
+        <section id="implementation">
+          <h2>Implementation</h2>
+          <h3 id="game-state-enumeration">1. Generate all valid game states</h3>
+          <pre><code class="language-python">from enum import IntEnum
+from itertools import product
+
+class Direction(IntEnum):
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
+
+def enumerate_valid_states(grid_size: int = 3, max_snake_len: int = 9) -> list[tuple]:
+    """Enumerate all valid (body_shape, head_pos, head_dir, food_pos) states."""
+    valid_states = []
+    # Iterate over snake lengths, body shapes, head positions, directions, food positions
+    for length in range(1, max_snake_len + 1):
+        # ... (implementation details)
+        pass
+    return valid_states</code></pre>
+          <h3 id="q-learning-agent">2. Create aQ-Learning Agent</h3>
+          <h3>3. Set up the training loop</h3>
+        </section>
+
+        <section id="results">
+          <h2>Results and Takeaways</h2>
+          <p>After training for several thousand episodes, our Q-learning agent should learn to navigate the snake toward food while avoiding walls and its own tail. Performance will depend on state representation and hyperparameters like learning rate and exploration rate.</p>
+          <p>This simple setup lays the groundwork for more advanced methods like Deep Q-Networks (DQN), which we'll explore in the Flappy Bird tutorial.</p>
+        </section>
+
+        <section id="references" class="references">
+          <h2>References</h2>
+          <ol>
+            <li id="ref-1">Ghasemi, M. and Ebrahimi, F. (2024). Reinforcement learning in artificial intelligence. <em>Artificial Intelligence Review</em>.</li>
+            <li id="ref-2">Ouyang, L., et al. (2022). Training language models to follow instructions with human feedback. <em>Advances in Neural Information Processing Systems</em>, 35.</li>
+            <li id="ref-3">Wang, Y., et al. (2023). Reinforcement learning for autonomous driving: A survey. <em>IEEE Transactions on Intelligent Transportation Systems</em>.</li>
+            <li id="ref-4">Silver, D., et al. (2016). Mastering the game of Go with deep neural networks and tree search. <em>Nature</em>, 529(7587), 484-489.</li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </article>
+
+  <script>Prism.highlightAll();</script>
+  <footer class="site-footer">
+    <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
+  </footer>
+</body>
+</html>
