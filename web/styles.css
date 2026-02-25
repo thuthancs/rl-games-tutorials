@@ -565,6 +565,156 @@ a.footnote-ref:hover {
   word-break: break-all;
 }
 
+/* Margin notes (right margin of article content) */
+.code-with-note {
+  position: relative;
+}
+
+.article-content .margin-note {
+  position: absolute;
+  left: 100%;
+  margin-left: 1.5rem;
+  width: 220px;
+  /* Align with the `yield` line: ~21st line in the neighbors() snippet; pre padding 1rem + (20 * 0.9rem * 1.5) */
+  top: calc(1rem + 20 * 0.9rem * 1.5);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #555;
+}
+
+.article-content .margin-note strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #333;
+}
+
+.article-content .margin-note code {
+  font-size: 0.8em;
+  padding: 0.1em 0.3em;
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+/* Valid states interactive demo */
+.valid-states-demo {
+  margin: 1.5rem 0 2rem;
+  padding: 1.25rem 1.5rem;
+  background: #f9f9f9;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+}
+
+.valid-states-intro {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.valid-states-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.valid-states-controls label {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.valid-states-controls select {
+  padding: 0.35rem 2.5rem 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-left: 0.25rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.valid-states-controls button {
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  background: #1a3a3a;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.valid-states-controls button:hover {
+  background: #244a4a;
+}
+
+.valid-states-output {
+  margin-top: 0.5rem;
+}
+
+.valid-states-summary {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+  color: #222;
+}
+
+.valid-states-list-caption {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.valid-states-grids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.valid-state-grid {
+  display: grid;
+  gap: 1px;
+  background: #bbb;
+  padding: 1px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.valid-state-cell {
+  background: #eee;
+  min-width: 26px;
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.valid-state-cell.valid-state-body {
+  background: #66bb6a;
+}
+
+.valid-state-cell.valid-state-head {
+  background: #2e7d32;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.valid-state-head-arrow {
+  display: block;
+  line-height: 1;
+  font-size: 1.1em;
+}
+
 /* Responsive - blog article */
 @media (max-width: 900px) {
   .blog-article {
@@ -591,6 +741,17 @@ a.footnote-ref:hover {
     grid-row: 3;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .article-content .margin-note {
+    position: static;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f8f8;
+    border-left: 3px solid #1a3a3a;
+    border-radius: 0 4px 4px 0;
   }
 }
 
