@@ -17,6 +17,24 @@ body {
   background-color: #fff;
 }
 
+/* Scroll progress bar (blog posts) */
+.scroll-progress-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  z-index: 9999;
+}
+
+.scroll-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #1a3a3a;
+  transition: width 0.08s ease-out;
+}
+
 strong {
   font-family: "Raleway", Helvetica, Arial, sans-serif;
   font-weight: 600;
@@ -408,6 +426,12 @@ strong {
 .toc-list a:hover {
   color: #1a3a3a;
   font-weight: 600;
+}
+
+.toc-list a.toc-active,
+.toc-list ul a.toc-active {
+  font-weight: 600;
+  color: #1a3a3a;
 }
 
 .toc-list ul {
