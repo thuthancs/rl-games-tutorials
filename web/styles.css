@@ -504,6 +504,43 @@ strong {
   line-height: 1.5;
 }
 
+/* Code block copy button */
+.article-content .code-block-wrap {
+  position: relative;
+}
+
+.article-content .code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #555;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.article-content .code-copy-btn:hover {
+  background: #1a3a3a;
+}
+
+.article-content .code-copy-btn:focus {
+  outline: 2px solid #1a3a3a;
+  outline-offset: 2px;
+}
+
+.article-content .code-copy-btn.copied {
+  background: #2e7d32;
+}
+
 .article-content figure.article-figure {
   margin: 1.5rem 0;
   text-align: center;
