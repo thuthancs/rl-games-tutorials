@@ -1,0 +1,80 @@
+<svg width="920" height="370" viewBox="0 0 920 370" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Arial, sans-serif">
+  <rect width="920" height="370" fill="#fafafa" rx="12"/>
+  <text x="460" y="28" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">Deep Q-Network (DQN) Architecture</text>
+
+  <rect x="20" y="96" width="118" height="56" rx="8" fill="#e8f4fd" stroke="#4a90d9" stroke-width="1.8"/>
+  <text x="79" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#1a3a5c">Environment</text>
+  <text x="79" y="140" text-anchor="middle" font-size="11" fill="#4a90d9">raw pixels</text>
+
+  <rect x="182" y="96" width="126" height="56" rx="8" fill="#f0e6ff" stroke="#8e44ad" stroke-width="1.8"/>
+  <text x="245" y="118" text-anchor="middle" font-size="12" font-weight="600" fill="#4a0080">Preprocessing</text>
+  <text x="245" y="134" text-anchor="middle" font-size="10" fill="#8e44ad">grayscale + resize</text>
+  <text x="245" y="148" text-anchor="middle" font-size="10" fill="#8e44ad">stack 4 frames</text>
+
+  <rect x="358" y="80" width="152" height="88" rx="8" fill="#fff7e6" stroke="#f0a500" stroke-width="1.8"/>
+  <text x="434" y="102" text-anchor="middle" font-size="12" font-weight="600" fill="#7a4f00">Online Network</text>
+  <text x="434" y="118" text-anchor="middle" font-size="10" fill="#888">Conv1  32&#xd7;8&#xd7;8 s4</text>
+  <text x="434" y="132" text-anchor="middle" font-size="10" fill="#888">Conv2  64&#xd7;4&#xd7;4 s2</text>
+  <text x="434" y="146" text-anchor="middle" font-size="10" fill="#888">Conv3  64&#xd7;3&#xd7;3 s1</text>
+  <text x="434" y="160" text-anchor="middle" font-size="10" fill="#888">FC 512  &#x2192;  Q-values</text>
+
+  <rect x="562" y="96" width="128" height="56" rx="8" fill="#eaf7ea" stroke="#3aaa35" stroke-width="1.8"/>
+  <text x="626" y="120" text-anchor="middle" font-size="12" font-weight="600" fill="#1a4d1a">&#x3b5;-Greedy Policy</text>
+  <text x="626" y="138" text-anchor="middle" font-size="11" fill="#3aaa35">select action  a&#x209C;</text>
+
+  <rect x="744" y="96" width="152" height="56" rx="8" fill="#fdeef3" stroke="#d44b78" stroke-width="1.8"/>
+  <text x="820" y="118" text-anchor="middle" font-size="12" font-weight="600" fill="#7a0033">Replay Buffer</text>
+  <text x="820" y="134" text-anchor="middle" font-size="10" fill="#d44b78">store (s, a, r, s&#x2019;)</text>
+  <text x="820" y="148" text-anchor="middle" font-size="10" fill="#d44b78">sample mini-batch</text>
+
+  <line x1="138" y1="124" x2="180" y2="124" stroke="#4a90d9" stroke-width="1.8" marker-end="url(#d-bl)"/>
+  <line x1="308" y1="124" x2="356" y2="124" stroke="#8e44ad" stroke-width="1.8" marker-end="url(#d-pu)"/>
+  <text x="332" y="116" text-anchor="middle" font-size="10" fill="#8e44ad">4&#xd7;84&#xd7;84</text>
+  <line x1="510" y1="124" x2="560" y2="124" stroke="#f0a500" stroke-width="1.8" marker-end="url(#d-or)"/>
+  <text x="535" y="116" text-anchor="middle" font-size="10" fill="#f0a500">Q-values</text>
+  <line x1="690" y1="124" x2="742" y2="124" stroke="#3aaa35" stroke-width="1.8" marker-end="url(#d-gr)"/>
+  <text x="716" y="116" text-anchor="middle" font-size="10" fill="#3aaa35">a&#x209C;</text>
+  <path d="M79 96 Q79 50 820 50 Q820 94 820 96" stroke="#4a90d9" stroke-width="1.5" fill="none" marker-end="url(#d-bl)" stroke-dasharray="5,3"/>
+  <text x="450" y="42" text-anchor="middle" font-size="10" fill="#4a90d9">s&#x209C;&#x208A;&#x2081;, r&#x209C;  (execute action, observe next state and reward)</text>
+
+  <rect x="358" y="224" width="152" height="72" rx="8" fill="#e6f0ff" stroke="#2255cc" stroke-width="1.8"/>
+  <text x="434" y="246" text-anchor="middle" font-size="12" font-weight="600" fill="#0a2080">Target Network</text>
+  <text x="434" y="262" text-anchor="middle" font-size="10" fill="#2255cc">frozen copy</text>
+  <text x="434" y="276" text-anchor="middle" font-size="10" fill="#2255cc">computes max Q(s&#x2019;,a&#x2019;)</text>
+  <text x="434" y="290" text-anchor="middle" font-size="10" fill="#2255cc">synced every C steps</text>
+
+  <rect x="562" y="232" width="128" height="56" rx="8" fill="#fff0f0" stroke="#cc2200" stroke-width="1.8"/>
+  <text x="626" y="253" text-anchor="middle" font-size="12" font-weight="600" fill="#7a0000">Huber Loss</text>
+  <text x="626" y="269" text-anchor="middle" font-size="10" fill="#cc2200">Q(s,a) vs target</text>
+  <text x="626" y="283" text-anchor="middle" font-size="10" fill="#cc2200">r + &#x3b3; max Q(s&#x2019;,a&#x2019;)</text>
+
+  <rect x="744" y="232" width="152" height="56" rx="8" fill="#f5f5f5" stroke="#555" stroke-width="1.8"/>
+  <text x="820" y="253" text-anchor="middle" font-size="12" font-weight="600" fill="#222">RMSprop</text>
+  <text x="820" y="269" text-anchor="middle" font-size="10" fill="#555">backprop gradients</text>
+  <text x="820" y="283" text-anchor="middle" font-size="10" fill="#555">update online net</text>
+
+  <line x1="820" y1="152" x2="820" y2="208" stroke="#d44b78" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="820" y1="208" x2="514" y2="208" stroke="#d44b78" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="514" y1="208" x2="514" y2="230" stroke="#d44b78" stroke-width="1.5" marker-end="url(#d-pk)" stroke-dasharray="4,3"/>
+  <line x1="434" y1="208" x2="434" y2="222" stroke="#d44b78" stroke-width="1.5" marker-end="url(#d-pk)" stroke-dasharray="4,3"/>
+  <text x="672" y="202" text-anchor="middle" font-size="10" fill="#d44b78">sample batch</text>
+
+  <line x1="510" y1="260" x2="560" y2="260" stroke="#2255cc" stroke-width="1.8" marker-end="url(#d-db)"/>
+  <text x="535" y="252" text-anchor="middle" font-size="10" fill="#2255cc">target Q</text>
+  <line x1="690" y1="260" x2="742" y2="260" stroke="#cc2200" stroke-width="1.8" marker-end="url(#d-rd)"/>
+  <path d="M744 260 Q710 260 710 196 Q710 124 512 124" stroke="#555" stroke-width="1.5" fill="none" marker-end="url(#d-gy)" stroke-dasharray="5,3"/>
+  <text x="716" y="188" text-anchor="middle" font-size="10" fill="#555" transform="rotate(-90 716 188)">update weights</text>
+  <path d="M358 152 Q322 152 322 260 Q322 285 356 275" stroke="#f0a500" stroke-width="1.5" fill="none" marker-end="url(#d-or)" stroke-dasharray="4,3"/>
+  <text x="284" y="214" text-anchor="middle" font-size="10" fill="#f0a500" transform="rotate(-90 284 214)">sync every C steps</text>
+
+  <defs>
+    <marker id="d-bl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4a90d9"/></marker>
+    <marker id="d-pu" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#8e44ad"/></marker>
+    <marker id="d-or" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f0a500"/></marker>
+    <marker id="d-gr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3aaa35"/></marker>
+    <marker id="d-pk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#d44b78"/></marker>
+    <marker id="d-db" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2255cc"/></marker>
+    <marker id="d-rd" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#cc2200"/></marker>
+    <marker id="d-gy" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#555"/></marker>
+  </defs>
+</svg>
