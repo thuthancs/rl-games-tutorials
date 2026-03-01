@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Training AI Agent to Play Flappy Bird Using Deep Q-Learning - Tinker & Play</title>
   <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 </head>
 
 <body class="post-flappy-bird">
@@ -59,6 +62,13 @@
                 <li><a href="#training">Training the Agent</a></li>
               </ul>
             </li>
+            <li>
+              <a href="#code-implementation">Code Implementation</a>
+              <ul class="toc-sublist">
+                <li><a href="#code-image-based">Image-based</a></li>
+                <li><a href="#code-state-based">State-based</a></li>
+              </ul>
+            </li>
             <li><a href="#results">Results</a></li>
           </ul>
         </nav>
@@ -67,10 +77,16 @@
       <div class="article-content">
         <section id="introduction">
           <h2>Introduction</h2>
-        </section>
+          <p>This tutorial is a replication of the paper Human-level control through deep reinforcement learning (Mnih, 2015). We will then compare it with a more simpler approach using states.</p>
 
         <section id="from-tabular-to-deep">
           <h2>From Tabular to Deep Q-Learning</h2>
+          <p></p>
+            Tabular Q-learning stores a value for every state-action pair. In Snake game, the state space is finite because the agent
+            operats on a grid of cells (e.g., 3x3 grid). With high-dimensional observations like
+            images, the state space is effectively infinite. This is because the values of the x and y coordinates of the bird are continuous. 
+            Deep Q-Learning solves this by using a neural network to approximate the Q-function. This basically means we approximate the Q-values for similar states.
+          </p>
         </section>
 
         <section id="flappy-bird-env">
@@ -80,17 +96,20 @@
           <h2>Image-based Approach</h2>
           <figure class="article-figure">
             <img src="../images/flappy_bird/algorithm.svg" alt="Image-based DQN algorithm">
+            <figcaption>The DQN training loop. At each step, the agent selects an action via an ε-greedy policy, stores the transition <em>(s, a, r, s')</em> in a replay buffer, then samples a random mini-batch to compute target Q-values using a separate target network. Gradients are clipped and the target network weights are periodically synced — both techniques stabilise training.</figcaption>
           </figure>
           <section id="preprocessing">
             <h3>Frame Preprocessing</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/frame_processing.svg" alt="Frame preprocessing pipeline">
+              <figcaption>Each raw RGB frame is converted to grayscale, cropped to remove the ground and sky, and resized to 84×84 pixels. Four consecutive processed frames are then stacked into a single input tensor — giving the network a short-term sense of motion (bird velocity, pipe approach speed) without requiring recurrent layers.</figcaption>
             </figure>
           </section>
           <section id="cnn-architecture">
             <h3>DQN Architecture</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/dqn_cnn.svg" alt="DQN CNN architecture">
+              <figcaption>The CNN takes a stack of 4 preprocessed frames (84×84×4) as input. Three convolutional layers progressively extract spatial features — edges, shapes, object positions — without any pooling, preserving spatial precision. The flattened feature map is passed through two fully connected layers, producing a Q-value for each possible action (flap or do nothing).</figcaption>
             </figure>
           </section>
           <section id="training">
@@ -98,9 +117,11 @@
             <div class="article-figure-group">
               <figure class="article-figure article-figure--primary">
                 <img src="../images/flappy_bird/image_based_rewards.png" alt="Image-based agent episode rewards over time">
+                <figcaption>Episode rewards over ~75k episodes. The moving average (MA-50) shows a steady upward trend from around −5 to +2.5, indicating the agent progressively learns to stay alive longer and pass more pipes. The high variance in individual episode rewards reflects the stochastic nature of exploration.</figcaption>
               </figure>
               <figure class="article-figure article-figure--primary">
                 <img src="../images/flappy_bird/image_based_loss.png" alt="Image-based agent training loss">
+                <figcaption>Training loss on a log scale over ~60k steps. The MA-100 curve drops sharply in the first 10k steps as the network fits initial experiences, then gradually decreases toward ~0.03 — suggesting the Q-value estimates become increasingly consistent as the target network stabilises.</figcaption>
               </figure>
             </div>
           </section>
@@ -111,21 +132,1159 @@
             <h3>State Representation</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/flappy_bird_game_state.svg" alt="Flappy Bird game state representation">
+              <figcaption>Instead of raw pixels, the state is a compact 5-dimensional vector: the bird's vertical position and velocity, the horizontal distance to the next pipe, and the vertical positions of the top and bottom pipe gaps. This hand-crafted representation makes learning significantly faster, as the network doesn't need to discover what matters from scratch.</figcaption>
             </figure>
           </section>
           <section id="nn-architecture">
             <h3>DQN Architecture</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/nn_architecture.svg" alt="DQN neural network architecture">
+              <figcaption>A lightweight fully-connected network maps the 5-dimensional state vector to Q-values for each action. Two hidden layers with ReLU activations are sufficient here — unlike the pixel-based approach, no convolutional layers are needed since the input already encodes the relevant game state directly.</figcaption>
             </figure>
           </section>
           <section id="training">
             <h3>Training the Agent</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/state_based_result.png" alt="State-based agent training results">
+              <figcaption>The state-based agent converges much faster than its image-based counterpart — the MA-50 reward curve climbs steeply in the first 20k episodes before plateauing around +8 to +10, while the training loss stabilises quickly below 0.2. The compact state representation removes the burden of visual feature extraction, letting the network focus entirely on learning the control policy.</figcaption>
             </figure>
           </section>
         </section>
+
+        <section id="code-implementation">
+          <h2>Code Implementation</h2>
+          <section id="code-image-based">
+            <h3>Image-based</h3>
+
+            <h4>Imports</h4>
+            <p>We use OpenCV for image processing, NumPy for array operations, and PyTorch for building and training the neural network.</p>
+            <pre><code class="language-python">import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+from collections import deque
+
+import torch
+import random
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim</code></pre>
+
+            <h4>Frame Preprocessing</h4>
+            <p>Each step, the environment returns an RGB frame. We convert it to grayscale and resize to 84×84. To capture motion, we take the element-wise maximum of two consecutive frames — this removes flickering artifacts common in Atari-style games.</p>
+            <p>The <code>preprocess()</code> function takes two consecutive raw frames and returns a single 84×84 grayscale array.</p>
+            <pre><code class="language-python">def preprocess(prev_frame: np.ndarray, current_frame: np.ndarray) -&gt; np.ndarray:
+  &quot;&quot;&quot;
+  Preprocess the input frames to get a 3D array (rows x cols x channels)
+
+  Args:
+    - prev_frame (str): path to the image
+    - current_frame (str): path to the image
+
+  Logic:
+    - Read both frames into 3D arrays
+    - Get the new frame by taking the maximum pixel values element-wise between both frames
+    - Convert the image into gray scale
+    - Rescale the image into a 2D array with size 84x84
+
+  Output:
+    - rescaled_img: a 2D array (84x84)
+  &quot;&quot;&quot;
+  new_frame = np.maximum(prev_frame, current_frame)
+  gray_img = cv2.cvtColor(new_frame, cv2.COLOR_RGB2GRAY)
+  rescaled_img = cv2.resize(gray_img, (84, 84), interpolation=cv2.INTER_AREA)
+  return rescaled_img</code></pre>
+
+            <h4>Frame Buffer</h4>
+            <p>A single frame gives no sense of speed or direction. <code>FrameBuffer</code> maintains a rolling window of the last 4 preprocessed frames, stacking them into a <code>(4, 84, 84)</code> tensor — the actual input to the DQN.</p>
+            <p><code>FrameBuffer</code> initialises by repeating the first frame four times so the buffer is always full from step one.</p>
+            <pre><code class="language-python">class FrameBuffer:
+  &quot;&quot;&quot;
+  Maintains a buffer of the last 4 preprocessed frames.
+  Handles initial steps by repeating the first frame.
+  &quot;&quot;&quot;
+  def __init__(self, frame_shape=(84,84)):
+    &quot;&quot;&quot;Initialize the attributes of the frame buffer object
+    - frame shape is 2D (84x84)
+    - the buffer size is 4
+    &quot;&quot;&quot;
+    self.frame_shape = frame_shape
+    self.buffer = deque(maxlen=4)
+
+  def add_frame(self, frame: np.ndarray) -&gt; np.ndarray:
+    &quot;&quot;&quot;Add a new frame to the buffer and return stacked frames
+
+    Args:
+      frame: preprocessed frame of shape (84, 84)
+
+    Returns:
+      stacked frames of shape (4, 84, 84) ready for DQN input
+    &quot;&quot;&quot;
+    if len(self.buffer) == 0:
+      for _ in range(4):
+        self.buffer.append(frame)
+    else:
+      self.buffer.append(frame)
+
+    return np.array(self.buffer)
+
+  def reset(self):
+    self.buffer.clear()
+
+  def get_stacked_frames(self) -&gt; np.ndarray:
+    return np.array(self.buffer)</code></pre>
+            <p><code>process_obs()</code> is the convenience wrapper called at each environment step: it preprocesses a frame pair and adds the result to the buffer, returning the updated stack.</p>
+            <pre><code class="language-python">def process_obs(prev_frame: np.ndarray,
+                curr_frame: np.ndarray,
+                frame_buffer: FrameBuffer, env) -&gt; np.ndarray:
+  &quot;&quot;&quot;
+  Process two observations (prev_frame and curr_frame) into DQN-ready input
+
+  Args:
+    prev_frame: raw vector of pixels from env
+    curr_frame: raw vector of pixels from env
+    frame_buffer: FrameBuffer instance
+    env: Environment instance (for rendering)
+
+  Returns:
+    Stacked frames of shape (84, 84, 4) ready for DQN
+  &quot;&quot;&quot;
+  preprocessed_frame = preprocess(prev_frame, curr_frame)
+  stacked = frame_buffer.add_frame(preprocessed_frame)
+  return stacked</code></pre>
+
+            <h4>Computing Convolutional Output Size</h4>
+            <p>Before defining the fully-connected layers of the CNN, we need to know the exact size of the flattened feature map produced by the convolutional layers. Rather than hard-coding it, we compute it analytically.</p>
+            <p><code>conv2d_output_size()</code> computes the spatial output dimensions of a convolutional layer given input size, kernel, stride, and padding.</p>
+            <pre><code class="language-python">def conv2d_output_size(input_size, kernel_size, stride, padding=0):
+  if isinstance(input_size, tuple):
+    h, w = input_size
+    if isinstance(kernel_size, tuple):
+      k_h, k_w = kernel_size
+    else:
+      k_h = k_w = kernel_size
+    if isinstance(stride, tuple):
+            s_h, s_w = stride
+    else:
+        s_h = s_w = stride
+    if isinstance(padding, tuple):
+            p_h, p_w = padding
+    else:
+        p_h = p_w = padding
+
+    o_h = (h - k_h + 2 * p_h) // s_h + 1
+    o_w = (w - k_w + 2 * p_w) // s_w + 1
+    return (int(o_h), int(o_w))
+  else:
+    k = kernel_size if isinstance(kernel_size, int) else kernel_size[0]
+    s = stride if isinstance(stride, int) else stride[0]
+    p = padding if isinstance(padding, int) else padding[0]
+    return int((input_size - k + 2 * p) // s + 1)</code></pre>
+
+            <h4>DQN Network</h4>
+            <p>The network follows the architecture from the original DQN paper: three convolutional layers to extract spatial features from stacked frames, followed by two fully-connected layers that output a Q-value for each action.</p>
+            <p>The <code>DQN</code> class uses a dummy forward pass with <code>torch.no_grad()</code> at init time to automatically compute the flattened size — no manual calculation needed.</p>
+            <pre><code class="language-python">class DQN(nn.Module):
+  def __init__(self, num_actions):
+    super().__init__()
+    self.conv = nn.Sequential(
+        nn.Conv2d(4, 32, kernel_size=8, stride=4),
+        nn.ReLU(),
+        nn.Conv2d(32, 64, kernel_size=4, stride=2),
+        nn.ReLU(),
+        nn.Conv2d(64, 64, kernel_size=3, stride=1),
+        nn.ReLU(),
+    )
+
+    with torch.no_grad():
+      dummy = torch.zeros(1, 4, 84, 84)
+      n_flat = self.conv(dummy).view(1, -1).size(1)
+
+    self.fc = nn.Sequential(
+        nn.Linear(n_flat, 512),
+        nn.ReLU(),
+        nn.Linear(512, num_actions)
+    )
+
+  def forward(self, x):
+    x = self.conv(x)
+    x = x.reshape(x.size(0), -1)
+    return self.fc(x)</code></pre>
+
+            <h4>Replay Buffer</h4>
+            <p>Rather than training on consecutive frames (which are highly correlated), we store transitions in a fixed-size ring buffer and sample random mini-batches. This breaks temporal correlations and stabilises training.</p>
+            <p>States are stored as <code>uint8</code> (0–255) instead of <code>float32</code> to save 4× memory. Rewards are clipped to {−1, 0, +1} using <code>np.sign()</code> to keep gradient magnitudes consistent across different reward scales.</p>
+            <pre><code class="language-python">class ReplayBuffer:
+    def __init__(self, capacity):
+        self.buffer = deque(maxlen=capacity)
+
+    def push(self, state, action, reward, next_state, done):
+        # Store as uint8 (save memory)
+        state = state.astype(np.uint8)
+        next_state = next_state.astype(np.uint8)
+        clipped_reward = np.sign(reward)
+        self.buffer.append((state, action, clipped_reward, next_state, done))
+
+    def sample(self, batch_size):
+        batch = random.sample(self.buffer, batch_size)
+        state, action, reward, next_state, done = zip(*batch)
+        return state, action, reward, next_state, done
+
+    def __len__(self):
+        return len(self.buffer)</code></pre>
+
+            <h4>DQN Agent</h4>
+            <p>The agent selects actions using an ε-greedy policy: with probability ε it explores randomly, otherwise it exploits the current Q-network. ε is annealed linearly from 1.0 down to 0.05 over the first 200k frames.</p>
+            <p>The <code>DQNAgent</code> tracks <code>steps_done</code> to compute the current ε via linear interpolation, decoupling exploration scheduling from the training loop.</p>
+            <pre><code class="language-python">class DQNAgent:
+    def __init__(
+        self,
+        q_net,
+        num_actions,
+        eps_start=1.0,
+        eps_end=0.1,
+        eps_decay_steps=1_000_000
+    ):
+        self.q_net = q_net
+        self.num_actions = num_actions
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_decay_steps = eps_decay_steps
+        self.steps_done = 0
+
+    def epsilon(self):
+        # Linear annealing from eps_start to eps_end over eps_decay_steps
+        frac = min(self.steps_done / self.eps_decay_steps, 1.0)
+        return self.eps_start + frac * (self.eps_end - self.eps_start)
+
+    def act(self, state, device=&#x27;cpu&#x27;):
+        &quot;&quot;&quot;
+        Select action using epsilon-greedy policy
+
+        Args:
+            state: Tensor of shape (4, 84, 84) or (1, 4, 84, 84)
+        &quot;&quot;&quot;
+        self.steps_done += 1
+
+        if np.random.rand() &lt; self.epsilon():
+            return np.random.randint(self.num_actions)
+
+        with torch.no_grad():
+            if state.dim() == 3:  # (4, 84, 84)
+                state = state.unsqueeze(0)  # (1, 4, 84, 84)
+            state = state.to(device)
+            q_values = self.q_net(state)
+            return q_values.argmax(dim=1).item()</code></pre>
+
+            <h4>DQN Trainer</h4>
+            <p>The trainer handles the core learning update: sampling a mini-batch, computing Bellman targets using the frozen target network, and updating the online network via RMSprop. The target network weights are copied from the online network every <code>C</code> steps.</p>
+            <p>States are normalised from <code>uint8</code> [0, 255] to <code>float32</code> [0, 1] only at training time — not during storage — saving significant memory. Huber loss (SmoothL1) is used instead of MSE to reduce sensitivity to outlier Q-value estimates.</p>
+            <pre><code class="language-python">class DQNTrainer:
+    def __init__(
+        self,
+        q_net,
+        target_net,
+        replay_buffer,
+        gamma=0.99,
+        lr=0.00025,  # Paper uses 0.00025
+        batch_size=32,
+        target_update_freq=10_000,
+        device=&#x27;cuda&#x27; if torch.cuda.is_available() else &#x27;cpu&#x27;
+    ):
+        self.device = device
+        self.q_net = q_net.to(device)
+        self.target_net = target_net.to(device)
+        self.target_net.load_state_dict(self.q_net.state_dict())
+        self.target_net.eval()
+
+        self.buffer = replay_buffer
+        self.gamma = gamma
+        self.batch_size = batch_size
+        self.target_update_freq = target_update_freq
+
+        # RMSprop as per paper
+        self.optimizer = optim.RMSprop(
+            self.q_net.parameters(),
+            lr=lr,
+            alpha=0.95,
+            eps=0.01,
+        )
+
+        # Paper uses Huber loss (smooth L1) OR clipped squared error
+        self.loss_fn = nn.SmoothL1Loss()  # Reasonable choice
+        self.train_steps = 0
+
+    def train_step(self):
+        if len(self.buffer) &lt; self.batch_size:
+            return None
+
+        state, action, reward, next_state, done = self.buffer.sample(self.batch_size)
+
+        # Convert uint8 → float32 and normalize to [0, 1]
+        state = torch.FloatTensor(np.array(state) / 255.0).to(self.device)
+        next_state = torch.FloatTensor(np.array(next_state) / 255.0).to(self.device)
+        action = torch.LongTensor(action).to(self.device)
+        reward = torch.FloatTensor(reward).to(self.device)  # Already clipped in buffer
+        done = torch.FloatTensor(done).to(self.device)
+
+        # Current Q values
+        q_values = self.q_net(state)
+        q_sa = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+
+        # Target Q values (using target network)
+        with torch.no_grad():
+            next_q = self.target_net(next_state).max(1)[0]
+            target = reward + self.gamma * next_q * (1 - done)
+
+        # Compute loss
+        loss = self.loss_fn(q_sa, target)
+
+        # Optimize
+        self.optimizer.zero_grad()
+        loss.backward()
+        # Optional: gradient clipping (not in original paper, but common practice)
+        # torch.nn.utils.clip_grad_norm_(self.q_net.parameters(), 10)
+        self.optimizer.step()
+
+        # Update target network every C steps
+        self.train_steps += 1
+        if self.train_steps % self.target_update_freq == 0:
+            self.target_net.load_state_dict(self.q_net.state_dict())
+
+        return loss.item()</code></pre>
+
+            <h4>Configuration &amp; Hyperparameters</h4>
+            <p>All training hyperparameters are defined at the top of the training script so they are easy to find and modify. The <code>TRAINING_MODE</code> flag lets you switch between a fresh run and resuming from a checkpoint without changing any other code.</p>
+            <p>Key hyperparameters follow the original DQN paper: 4M training frames, replay buffer of 100k, batch size 32, learning rate 2.5×10⁻⁴, γ = 0.99, and ε decaying over 200k frames.</p>
+            <pre><code class="language-python"># ============================================================================
+# CONFIGURATION - EDIT THIS TO CONTROL TRAINING MODE
+# ============================================================================
+TRAINING_MODE = &quot;resume&quot;  # Options: &quot;fresh&quot; or &quot;resume&quot;
+RESUME_CHECKPOINT = &quot;/content/checkpoints/final_model.pth&quot;  # Path to checkpoint for resume mode
+
+# ============================================================================
+# IMPORTS
+# ============================================================================
+import flappy_bird_gymnasium
+import gymnasium as gym
+import torch
+import torch.optim as optim
+import numpy as np
+from collections import deque
+import matplotlib.pyplot as plt
+import os
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    !pip install tqdm
+    from tqdm import tqdm
+
+# ============================================================================
+# HYPERPARAMETERS
+# ============================================================================
+TOTAL_FRAMES = 4_000_000
+REPLAY_BUFFER_SIZE = 100_000
+MIN_REPLAY_SIZE = 10_000
+BATCH_SIZE = 32
+LEARNING_RATE = 0.00025
+GAMMA = 0.99
+TARGET_UPDATE_FREQ = 2_500
+FRAME_SKIP = 4
+EPS_START = 1.0
+EPS_END = 0.05
+EPS_DECAY_FRAMES = 200_000
+UPDATE_FREQ = 4
+SAVE_FREQ = 50_000
+CHECKPOINT_DIR = &quot;/content/checkpoints&quot;
+
+device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+print(f&quot;Using device: {device}&quot;)
+if device.type == &#x27;cuda&#x27;:
+    print(f&quot;GPU: {torch.cuda.get_device_name(0)}&quot;)
+
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)</code></pre>
+
+            <h4>Helper Functions</h4>
+            <p>Two utility functions manage checkpointing: <code>save_checkpoint()</code> serialises the full training state (network weights, optimizer state, episode history) so training can be paused and resumed at any point.</p>
+            <p><code>initialize_training_state()</code> returns a unified state dictionary regardless of mode — downstream code never needs to branch on whether training is fresh or resumed.</p>
+            <pre><code class="language-python"># ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+def save_checkpoint(filepath, q_net, target_net, optimizer, total_steps, episode,
+                   episode_rewards, episode_lengths, train_steps=None):
+    &quot;&quot;&quot;Save training checkpoint&quot;&quot;&quot;
+    checkpoint = {
+        &#x27;q_net_state_dict&#x27;: q_net.state_dict(),
+        &#x27;target_net_state_dict&#x27;: target_net.state_dict(),
+        &#x27;optimizer_state_dict&#x27;: optimizer.state_dict(),
+        &#x27;total_steps&#x27;: total_steps,
+        &#x27;episode&#x27;: episode,
+        &#x27;episode_rewards&#x27;: episode_rewards,
+        &#x27;episode_lengths&#x27;: episode_lengths,
+    }
+    if train_steps is not None:
+        checkpoint[&#x27;train_steps&#x27;] = train_steps
+
+    torch.save(checkpoint, filepath)
+    print(f&quot;✓ Checkpoint saved: {filepath}&quot;)
+
+def load_checkpoint(filepath):
+    &quot;&quot;&quot;Load training checkpoint&quot;&quot;&quot;
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f&quot;Checkpoint not found: {filepath}&quot;)
+
+    checkpoint = torch.load(filepath)
+    print(f&quot;✓ Checkpoint loaded from: {filepath}&quot;)
+    print(f&quot;  Total frames: {checkpoint[&#x27;total_steps&#x27;]:,}&quot;)
+    print(f&quot;  Episode: {checkpoint[&#x27;episode&#x27;]}&quot;)
+    print(f&quot;  Avg reward (last 10): {np.mean(checkpoint[&#x27;episode_rewards&#x27;][-10:]):.2f}&quot;)
+
+    return checkpoint
+
+def initialize_training_state(mode, checkpoint_path=None):
+    &quot;&quot;&quot;
+    Initialize or restore training state based on mode
+
+    Args:
+        mode: &quot;fresh&quot; or &quot;resume&quot;
+        checkpoint_path: Path to checkpoint (required if mode=&quot;resume&quot;)
+
+    Returns:
+        dict with training state
+    &quot;&quot;&quot;
+    if mode == &quot;fresh&quot;:
+        print(&quot;\n&quot; + &quot;=&quot;*60)
+        print(&quot;STARTING FRESH TRAINING&quot;)
+        print(&quot;=&quot;*60)
+
+        return {
+            &#x27;total_steps&#x27;: 0,
+            &#x27;episode&#x27;: 0,
+            &#x27;episode_rewards&#x27;: [],
+            &#x27;episode_lengths&#x27;: [],
+            &#x27;losses&#x27;: [],
+            &#x27;epsilon_history&#x27;: [],
+            &#x27;last_save&#x27;: 0,
+            &#x27;q_net_state&#x27;: None,
+            &#x27;target_net_state&#x27;: None,
+            &#x27;optimizer_state&#x27;: None,
+        }
+
+    elif mode == &quot;resume&quot;:
+        print(&quot;\n&quot; + &quot;=&quot;*60)
+        print(&quot;RESUMING TRAINING FROM CHECKPOINT&quot;)
+        print(&quot;=&quot;*60)
+
+        if checkpoint_path is None:
+            raise ValueError(&quot;checkpoint_path required for resume mode&quot;)
+
+        checkpoint = load_checkpoint(checkpoint_path)
+
+        return {
+            &#x27;total_steps&#x27;: checkpoint[&#x27;total_steps&#x27;],
+            &#x27;episode&#x27;: checkpoint[&#x27;episode&#x27;],
+            &#x27;episode_rewards&#x27;: checkpoint[&#x27;episode_rewards&#x27;],
+            &#x27;episode_lengths&#x27;: checkpoint[&#x27;episode_lengths&#x27;],
+            &#x27;losses&#x27;: [],  # Fresh loss tracking
+            &#x27;epsilon_history&#x27;: [],  # Fresh epsilon tracking
+            &#x27;last_save&#x27;: checkpoint[&#x27;total_steps&#x27;],
+            &#x27;q_net_state&#x27;: checkpoint[&#x27;q_net_state_dict&#x27;],
+            &#x27;target_net_state&#x27;: checkpoint[&#x27;target_net_state_dict&#x27;],
+            &#x27;optimizer_state&#x27;: checkpoint[&#x27;optimizer_state_dict&#x27;],
+            &#x27;train_steps&#x27;: checkpoint.get(&#x27;train_steps&#x27;, None),
+        }
+
+    else:
+        raise ValueError(f&quot;Invalid mode: {mode}. Use &#x27;fresh&#x27; or &#x27;resume&#x27;&quot;)</code></pre>
+
+            <h4>Initialise Environment &amp; Networks</h4>
+            <p>We create the Flappy Bird environment in <code>rgb_array</code> render mode so we can capture raw pixel frames. Two identical DQN instances are created — the online network (<code>q_net</code>) is updated every step, while the target network is frozen and only periodically synced.</p>
+            <p>The target network is set to <code>eval()</code> mode and its weights are initialised from the online network. Components are wired together: replay buffer → trainer, frame buffer → preprocessing pipeline.</p>
+            <pre><code class="language-python"># ============================================================================
+# INITIALIZE ENVIRONMENT AND NETWORKS
+# ============================================================================
+env = gym.make(&quot;FlappyBird-v0&quot;, render_mode=&#x27;rgb_array&#x27;)
+num_actions = env.action_space.n
+print(f&quot;Number of actions: {num_actions}&quot;)
+
+# Create networks
+q_net = DQN(num_actions).to(device)
+target_net = DQN(num_actions).to(device)
+target_net.eval()
+
+# Create components
+replay_buffer = ReplayBuffer(REPLAY_BUFFER_SIZE)
+frame_buffer = FrameBuffer()
+trainer = DQNTrainer(
+    q_net=q_net,
+    target_net=target_net,
+    replay_buffer=replay_buffer,
+    gamma=GAMMA,
+    lr=LEARNING_RATE,
+    batch_size=BATCH_SIZE,
+    target_update_freq=TARGET_UPDATE_FREQ,
+    device=device
+)
+agent = DQNAgent(
+    q_net=q_net,
+    num_actions=num_actions,
+    eps_start=EPS_START,
+    eps_end=EPS_END,
+    eps_decay_steps=EPS_DECAY_FRAMES
+)
+
+# ============================================================================
+# INITIALIZE OR RESTORE TRAINING STATE
+# ============================================================================
+state = initialize_training_state(
+    mode=TRAINING_MODE,
+    checkpoint_path=RESUME_CHECKPOINT if TRAINING_MODE == &quot;resume&quot; else None
+)
+
+# Extract state variables
+total_steps = state[&#x27;total_steps&#x27;]
+episode = state[&#x27;episode&#x27;]
+episode_rewards = state[&#x27;episode_rewards&#x27;]
+episode_lengths = state[&#x27;episode_lengths&#x27;]
+losses = state[&#x27;losses&#x27;]
+epsilon_history = state[&#x27;epsilon_history&#x27;]
+last_save = state[&#x27;last_save&#x27;]
+
+# Load network states if resuming
+if state[&#x27;q_net_state&#x27;] is not None:
+    q_net.load_state_dict(state[&#x27;q_net_state&#x27;])
+    target_net.load_state_dict(state[&#x27;target_net_state&#x27;])
+    trainer.optimizer.load_state_dict(state[&#x27;optimizer_state&#x27;])
+    agent.steps_done = total_steps
+
+    # Restore trainer steps
+    if state.get(&#x27;train_steps&#x27;) is not None:
+        trainer.train_steps = state[&#x27;train_steps&#x27;]
+    else:
+        trainer.train_steps = max(0, (total_steps - MIN_REPLAY_SIZE) // UPDATE_FREQ)
+
+    print(f&quot;  Agent steps: {agent.steps_done:,}&quot;)
+    print(f&quot;  Trainer steps: {trainer.train_steps:,}&quot;)
+else:
+    # Fresh training - initialize target net
+    target_net.load_state_dict(q_net.state_dict())
+
+print(f&quot;\nTarget: {TOTAL_FRAMES:,} frames&quot;)
+print(f&quot;Starting from: {total_steps:,} frames&quot;)
+print(f&quot;Remaining: {TOTAL_FRAMES - total_steps:,} frames&quot;)
+print(&quot;=&quot;*60 + &quot;\n&quot;)</code></pre>
+
+            <h4>Training Loop</h4>
+            <p>The main loop collects experience by stepping through the environment, stores transitions in the replay buffer, and triggers a training update every 4 frames once the buffer has enough data. Frame skipping (repeating each action for 4 frames) both speeds up training and reduces the action frequency to a more human-like rate.</p>
+            <p>Checkpoints are saved every 50k frames. On <code>KeyboardInterrupt</code>, the <code>finally</code> block guarantees a final checkpoint is always saved before the script exits.</p>
+            <pre><code class="language-python"># ============================================================================
+# TRAINING LOOP
+# ============================================================================
+print(f&quot;Starting training...&quot;)
+print(f&quot;Expected time: ~1-2 hours on T4 GPU&quot;)
+print(f&quot;Training will start after {MIN_REPLAY_SIZE:,} frames\n&quot;)
+
+pbar = tqdm(total=TOTAL_FRAMES, initial=total_steps, desc=&quot;Training&quot;)
+
+try:
+    while total_steps &lt; TOTAL_FRAMES:
+        # Reset environment
+        observation, info = env.reset()
+        frame_buffer.reset()
+
+        # Get initial frames
+        prev_frame = env.render()
+        curr_frame = env.render()
+
+        # Initialize buffer with first frame
+        first_preprocessed = preprocess(prev_frame, curr_frame)
+        state_array = frame_buffer.add_frame(first_preprocessed)
+
+        episode_reward = 0
+        episode_length = 0
+        done = False
+
+        while not done and total_steps &lt; TOTAL_FRAMES:
+            # Select action
+            state_tensor = torch.FloatTensor(state_array).to(device)
+            action = agent.act(state_tensor, device=device)
+
+            # Execute action with frame skipping
+            frame_reward = 0
+            for _ in range(FRAME_SKIP):
+                observation, reward, terminated, truncated, info = env.step(action)
+                frame_reward += reward
+                total_steps += 1
+
+                # Check if we&#x27;ve hit the target
+                if total_steps &gt;= TOTAL_FRAMES:
+                    done = True
+                    break
+
+                if terminated or truncated:
+                    done = True
+                    break
+
+            # Get next state
+            curr_frame = env.render()
+            preprocessed = preprocess(prev_frame, curr_frame)
+            next_state = frame_buffer.add_frame(preprocessed)
+
+            # Store transition
+            replay_buffer.push(state_array, action, frame_reward, next_state, done)
+
+            # Train
+            if len(replay_buffer) &gt;= MIN_REPLAY_SIZE and total_steps % UPDATE_FREQ == 0:
+                loss = trainer.train_step()
+                if loss is not None:
+                    losses.append(loss)
+
+            # Save checkpoint periodically
+            if total_steps - last_save &gt;= SAVE_FREQ:
+                checkpoint_path = f&quot;{CHECKPOINT_DIR}/checkpoint_{total_steps}.pth&quot;
+                save_checkpoint(
+                    checkpoint_path, q_net, target_net, trainer.optimizer,
+                    total_steps, episode, episode_rewards, episode_lengths,
+                    train_steps=trainer.train_steps
+                )
+                last_save = total_steps
+
+            # Update state
+            state_array = next_state
+            prev_frame = curr_frame
+            episode_reward += frame_reward
+            episode_length += 1
+
+            # Update progress bar
+            pbar.update(FRAME_SKIP)
+
+            # Record epsilon
+            if total_steps % 1000 == 0:
+                epsilon_history.append((total_steps, agent.epsilon()))
+
+        # Episode ended
+        episode += 1
+        episode_rewards.append(episode_reward)
+        episode_lengths.append(episode_length)
+
+        # Print progress
+        if episode % 10 == 0:
+            avg_reward = np.mean(episode_rewards[-10:]) if len(episode_rewards) &gt;= 10 else np.mean(episode_rewards)
+            avg_length = np.mean(episode_lengths[-10:]) if len(episode_lengths) &gt;= 10 else np.mean(episode_lengths)
+            avg_loss = np.mean(losses[-100:]) if len(losses) &gt;= 100 else (np.mean(losses) if losses else 0)
+
+            pbar.set_postfix({
+                &#x27;Ep&#x27;: episode,
+                &#x27;Reward&#x27;: f&#x27;{avg_reward:.1f}&#x27;,
+                &#x27;ε&#x27;: f&#x27;{agent.epsilon():.3f}&#x27;,
+                &#x27;Loss&#x27;: f&#x27;{avg_loss:.4f}&#x27;
+            })
+
+except KeyboardInterrupt:
+    print(&quot;\n⚠️ Training interrupted by user&quot;)
+
+finally:
+    pbar.close()
+    env.close()
+
+    # Save final checkpoint
+    final_path = f&quot;{CHECKPOINT_DIR}/final_model.pth&quot;
+    save_checkpoint(
+        final_path, q_net, target_net, trainer.optimizer,
+        total_steps, episode, episode_rewards, episode_lengths,
+        train_steps=trainer.train_steps
+    )
+
+    print(&quot;\n✓ Training completed!&quot;)
+    print(f&quot;Total frames: {total_steps:,}&quot;)
+    print(f&quot;Total episodes: {episode}&quot;)
+
+# ============================================================================
+# VISUALIZATION
+# ============================================================================
+fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+
+# Plot 1: Episode Rewards
+axes[0, 0].plot(episode_rewards, alpha=0.3, label=&#x27;Episode Reward&#x27;, linewidth=0.5)
+if len(episode_rewards) &gt;= 50:
+    window = min(50, len(episode_rewards))
+    moving_avg = np.convolve(episode_rewards, np.ones(window)/window, mode=&#x27;valid&#x27;)
+    axes[0, 0].plot(range(window-1, len(episode_rewards)), moving_avg,
+                    &#x27;r-&#x27;, linewidth=2, label=f&#x27;MA-{window}&#x27;)
+axes[0, 0].set_xlabel(&#x27;Episode&#x27;)
+axes[0, 0].set_ylabel(&#x27;Reward&#x27;)
+title_suffix = &quot; (Resumed)&quot; if TRAINING_MODE == &quot;resume&quot; else &quot;&quot;
+axes[0, 0].set_title(f&#x27;Episode Rewards Over Time{title_suffix}&#x27;)
+axes[0, 0].legend()
+axes[0, 0].grid(True, alpha=0.3)
+
+# Plot 2: Episode Lengths
+axes[0, 1].plot(episode_lengths, alpha=0.3, label=&#x27;Episode Length&#x27;, linewidth=0.5)
+if len(episode_lengths) &gt;= 50:
+    window = min(50, len(episode_lengths))
+    moving_avg = np.convolve(episode_lengths, np.ones(window)/window, mode=&#x27;valid&#x27;)
+    axes[0, 1].plot(range(window-1, len(episode_lengths)), moving_avg,
+                    &#x27;r-&#x27;, linewidth=2, label=f&#x27;MA-{window}&#x27;)
+axes[0, 1].set_xlabel(&#x27;Episode&#x27;)
+axes[0, 1].set_ylabel(&#x27;Steps&#x27;)
+axes[0, 1].set_title(f&#x27;Episode Lengths Over Time{title_suffix}&#x27;)
+axes[0, 1].legend()
+axes[0, 1].grid(True, alpha=0.3)
+
+# Plot 3: Epsilon Decay
+if epsilon_history:
+    steps, eps_values = zip(*epsilon_history)
+    axes[1, 0].plot(steps, eps_values, &#x27;g-&#x27;, linewidth=2)
+    axes[1, 0].set_xlabel(&#x27;Frame&#x27;)
+    axes[1, 0].set_ylabel(&#x27;Epsilon&#x27;)
+    title = &#x27;Epsilon Decay (This Session)&#x27; if TRAINING_MODE == &quot;resume&quot; else &#x27;Epsilon Decay&#x27;
+    axes[1, 0].set_title(title)
+    axes[1, 0].grid(True, alpha=0.3)
+else:
+    axes[1, 0].text(0.5, 0.5, &#x27;No epsilon data\n(resumed from checkpoint)&#x27;,
+                    ha=&#x27;center&#x27;, va=&#x27;center&#x27;, transform=axes[1, 0].transAxes)
+    axes[1, 0].set_title(&#x27;Epsilon Decay&#x27;)
+
+# Plot 4: Training Loss
+if losses:
+    axes[1, 1].plot(losses, alpha=0.2, linewidth=0.5)
+    if len(losses) &gt;= 100:
+        window = 100
+        moving_avg = np.convolve(losses, np.ones(window)/window, mode=&#x27;valid&#x27;)
+        axes[1, 1].plot(range(window-1, len(losses)), moving_avg,
+                       &#x27;r-&#x27;, linewidth=2, label=f&#x27;MA-{window}&#x27;)
+    axes[1, 1].set_xlabel(&#x27;Training Step&#x27;)
+    axes[1, 1].set_ylabel(&#x27;Loss&#x27;)
+    title = &#x27;Training Loss (This Session)&#x27; if TRAINING_MODE == &quot;resume&quot; else &#x27;Training Loss&#x27;
+    axes[1, 1].set_title(title)
+    axes[1, 1].set_yscale(&#x27;log&#x27;)
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
+else:
+    axes[1, 1].text(0.5, 0.5, &#x27;No loss data yet&#x27;,
+                    ha=&#x27;center&#x27;, va=&#x27;center&#x27;, transform=axes[1, 1].transAxes)
+    axes[1, 1].set_title(&#x27;Training Loss&#x27;)
+
+plt.tight_layout()
+save_name = &#x27;training_results_resumed.png&#x27; if TRAINING_MODE == &quot;resume&quot; else &#x27;training_results.png&#x27;
+plt.savefig(f&#x27;/content/{save_name}&#x27;, dpi=150, bbox_inches=&#x27;tight&#x27;)
+plt.show()
+
+# ============================================================================
+# SUMMARY
+# ============================================================================
+print(&quot;\n&quot; + &quot;=&quot;*60)
+print(&quot;TRAINING SUMMARY&quot;)
+print(&quot;=&quot;*60)
+print(f&quot;Training mode: {TRAINING_MODE.upper()}&quot;)
+print(f&quot;Total frames: {total_steps:,}&quot;)
+print(f&quot;Total episodes: {episode}&quot;)
+print(f&quot;Average reward: {np.mean(episode_rewards):.2f} ± {np.std(episode_rewards):.2f}&quot;)
+print(f&quot;Best reward: {np.max(episode_rewards):.2f}&quot;)
+print(f&quot;Worst reward: {np.min(episode_rewards):.2f}&quot;)
+print(f&quot;Last 50 eps avg: {np.mean(episode_rewards[-50:]):.2f}&quot; if len(episode_rewards) &gt;= 50 else &quot;N/A&quot;)
+print(f&quot;Last 100 eps avg: {np.mean(episode_rewards[-100:]):.2f}&quot; if len(episode_rewards) &gt;= 100 else &quot;N/A&quot;)
+print(f&quot;Avg episode length: {np.mean(episode_lengths):.1f}&quot;)
+print(f&quot;Final epsilon: {agent.epsilon():.3f}&quot;)
+print(f&quot;Training steps: {trainer.train_steps:,}&quot;)
+print(f&quot;Replay buffer: {len(replay_buffer):,}/{REPLAY_BUFFER_SIZE:,}&quot;)
+print(&quot;=&quot;*60)
+
+# Download model
+from google.colab import files
+print(&quot;\n📥 Downloading final model...&quot;)
+files.download(final_path)
+print(&quot;✓ Model downloaded!&quot;)</code></pre>
+
+          </section>
+
+        <section id="code-state-based">
+            <h3>State-based</h3>
+
+            <h4>Setup</h4>
+            <p>Install the Flappy Bird Gymnasium package and explore the environment's observation space to understand what the state vector contains.</p>
+            <p>The environment exposes a 12-dimensional state vector including the bird's position, velocity, and relative distances to the next pipes — no pixel processing required.</p>
+            <pre><code class="language-python">!pip install flappy_bird_gymnasium
+
+import gymnasium as gym
+
+import flappy_bird_gymnasium
+import inspect
+
+env = gym.make(&quot;FlappyBird-v0&quot;, use_lidar=False)
+obs, _ = env.reset()
+
+# Check if environment has state names defined
+if hasattr(env.unwrapped, &#x27;_get_observation&#x27;):
+    print(&quot;Found _get_observation method&quot;)
+    print(inspect.getsource(env.unwrapped._get_observation_features))
+
+# Check environment attributes
+print(&quot;\nEnvironment attributes:&quot;)
+for attr in dir(env.unwrapped):
+    if &#x27;state&#x27; in attr.lower() or &#x27;obs&#x27; in attr.lower():
+        print(f&quot;  - {attr}&quot;)
+
+print(f&quot;Observation shape: {obs.shape}&quot;)
+print(f&quot;Number of actions: {env.action_space.n}&quot;)
+print(f&quot;First few values: {obs[:20]}&quot;)</code></pre>
+
+            <h4>Configuration &amp; Hyperparameters</h4>
+            <p>The state-based approach uses the same general hyperparameter structure but with a larger <code>TARGET_UPDATE_FREQ</code> (10k vs 2.5k) since the compact state space converges more smoothly and doesn't need as aggressive target refreshes.</p>
+            <p>Imports, device detection, and directory setup mirror the image-based script so both approaches can be run side-by-side.</p>
+            <pre><code class="language-python"># ============================================================================
+# CONFIGURATION
+# ============================================================================
+TRAINING_MODE = &quot;resume&quot;
+RESUME_CHECKPOINT = None
+
+# ============================================================================
+# HYPERPARAMETERS
+# ============================================================================
+TOTAL_FRAMES = 5_000_000
+REPLAY_BUFFER_SIZE = 100_000
+MIN_REPLAY_SIZE = 10_000
+BATCH_SIZE = 32
+LEARNING_RATE = 0.00025
+GAMMA = 0.99
+TARGET_UPDATE_FREQ = 10_000
+FRAME_SKIP = 4
+EPS_START = 1.0
+EPS_END = 0.05
+EPS_DECAY_FRAMES = 200_000
+UPDATE_FREQ = 4
+SAVE_FREQ = 50_000
+CHECKPOINT_DIR = &quot;/content/checkpoints&quot;
+
+device = torch.device(&quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;)
+print(f&quot;Using device: {device}&quot;)
+
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)</code></pre>
+
+            <h4>State DQN Network</h4>
+            <p>Because the input is already a clean numeric vector, a simple fully-connected network suffices — no convolutional layers needed. Three linear layers with ReLU activations map the state directly to Q-values.</p>
+            <p><code>StateDQN</code> is dramatically simpler and faster to train than the CNN: a 12-dimensional input, two hidden layers of 256 units, and a 2-dimensional output (flap or do nothing).</p>
+            <pre><code class="language-python"># ============================================================================
+# STATE-BASED DQN NETWORK (Simple Fully Connected)
+# ============================================================================
+class StateDQN(nn.Module):
+    def __init__(self, state_dim, num_actions, hidden_dim=256):
+        super().__init__()
+
+        self.network = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, num_actions)
+        )
+
+    def forward(self, x):
+        return self.network(x)</code></pre>
+
+            <h4>Replay Buffer</h4>
+            <p>Unlike the image-based buffer, there is no need to cast states to <code>uint8</code> — state vectors are already compact floats. Rewards are still clipped to stabilise training.</p>
+            <p><code>SimpleReplayBuffer</code> removes all the image-specific memory optimisations, keeping the implementation clean and straightforward.</p>
+            <pre><code class="language-python"># ============================================================================
+# Simple Replay Buffer (No Image Preprocessing Needed)
+# ============================================================================
+class SimpleReplayBuffer:
+    def __init__(self, capacity):
+        self.buffer = deque(maxlen=capacity)
+
+    def push(self, state, action, reward, next_state, done):
+        # Clip the reward: positive values turn into 1 and negative values turn into 0
+        clipped_reward = np.sign(reward)
+        self.buffer.append((state, action, clipped_reward, next_state, done))
+
+    def sample(self, batch_size):
+        batch = random.sample(self.buffer, batch_size)
+        state, action, reward, next_state, done = zip(*batch)
+        return state, action, reward, next_state, done
+
+    def __len__(self):
+        return len(self.buffer)</code></pre>
+
+            <h4>DQN Agent</h4>
+            <p>The agent uses the same ε-greedy strategy as the image-based version. The key difference is that state inputs are plain float vectors rather than stacked image tensors, so no preprocessing is needed before the forward pass.</p>
+            <p><code>StateDQNAgent</code> accepts either a raw NumPy array or a Tensor — it handles both cases internally, simplifying the training loop.</p>
+            <pre><code class="language-python"># ============================================================================
+# DQN Agent (No Frame Stacking)
+# ============================================================================
+class StateDQNAgent:
+    def __init__(self, q_net, num_actions, eps_start=1.0, eps_end=0.1,
+                 eps_decay_steps=1_000_000):
+        self.q_net = q_net
+        self.num_actions = num_actions
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_decay_steps = eps_decay_steps
+        self.steps_done = 0
+
+    def epsilon(self):
+        frac = min(self.steps_done / self.eps_decay_steps, 1.0)
+        return self.eps_start + frac * (self.eps_end - self.eps_start)
+
+    def act(self, state, device=&#x27;cpu&#x27;):
+        self.steps_done += 1
+
+        if np.random.rand() &lt; self.epsilon():
+            return np.random.randint(self.num_actions)
+
+        with torch.no_grad():
+            # State is already a vector, just convert to tensor
+            if not isinstance(state, torch.Tensor):
+                state = torch.FloatTensor(state)
+
+            if state.dim() == 1:
+                state = state.unsqueeze(0)
+
+            state = state.to(device)
+            q_values = self.q_net(state)
+            return q_values.argmax(dim=1).item()</code></pre>
+
+            <h4>DQN Trainer</h4>
+            <p>The trainer uses Adam instead of RMSprop — a common choice for state-based DQN since the loss landscape is smoother without the high-variance pixel inputs. No float normalisation is needed since state values are already in a reasonable range.</p>
+            <p>The structure mirrors <code>DQNTrainer</code> exactly, making it easy to compare the two approaches. The only meaningful differences are the optimizer choice and the absence of uint8 → float32 conversion.</p>
+            <pre><code class="language-python"># ============================================================================
+# DQN Trainer
+# ============================================================================
+class StateDQNTrainer:
+    def __init__(self, q_net, target_net, replay_buffer, gamma=0.99,
+                 lr=0.00025, batch_size=32, target_update_freq=10_000,
+                 device=&#x27;cuda&#x27;):
+        self.device = device
+        self.q_net = q_net.to(device)
+        self.target_net = target_net.to(device)
+        self.target_net.load_state_dict(self.q_net.state_dict())
+        self.target_net.eval()
+
+        self.buffer = replay_buffer
+        self.gamma = gamma
+        self.batch_size = batch_size
+        self.target_update_freq = target_update_freq
+
+        self.optimizer = optim.Adam(q_net.parameters(), lr=lr)
+        self.loss_fn = nn.SmoothL1Loss()
+        self.train_steps = 0
+
+    def train_step(self):
+        if len(self.buffer) &lt; self.batch_size:
+            return None
+
+        state, action, reward, next_state, done = self.buffer.sample(self.batch_size)
+
+        # Convert to tensors (states are already clean vectors)
+        state = torch.FloatTensor(np.array(state)).to(self.device)
+        next_state = torch.FloatTensor(np.array(next_state)).to(self.device)
+        action = torch.LongTensor(action).to(self.device)
+        reward = torch.FloatTensor(reward).to(self.device)
+        done = torch.FloatTensor(done).to(self.device)
+
+        # Current Q values
+        q_values = self.q_net(state)
+        q_sa = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+
+        # Target Q values
+        with torch.no_grad():
+            next_q = self.target_net(next_state).max(1)[0]
+            target = reward + self.gamma * next_q * (1 - done)
+
+        # Compute loss
+        loss = self.loss_fn(q_sa, target)
+
+        # Optimize
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Update target network
+        self.train_steps += 1
+        if self.train_steps % self.target_update_freq == 0:
+            self.target_net.load_state_dict(self.q_net.state_dict())
+
+        return loss.item()</code></pre>
+
+            <h4>Helper Functions</h4>
+            <p>Checkpoint saving follows the same pattern as the image-based script so the two training runs are interchangeable from a workflow perspective.</p>
+            <p><code>save_checkpoint()</code> serialises network weights, optimizer state, and full episode history. The optional <code>train_steps</code> argument preserves the target-network update counter across resumes.</p>
+            <pre><code class="language-python"># ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+def save_checkpoint(filepath, q_net, target_net, optimizer, total_steps, episode,
+                   episode_rewards, episode_lengths, train_steps=None):
+    checkpoint = {
+        &#x27;q_net_state_dict&#x27;: q_net.state_dict(),
+        &#x27;target_net_state_dict&#x27;: target_net.state_dict(),
+        &#x27;optimizer_state_dict&#x27;: optimizer.state_dict(),
+        &#x27;total_steps&#x27;: total_steps,
+        &#x27;episode&#x27;: episode,
+        &#x27;episode_rewards&#x27;: episode_rewards,
+        &#x27;episode_lengths&#x27;: episode_lengths,
+    }
+    if train_steps is not None:
+        checkpoint[&#x27;train_steps&#x27;] = train_steps
+
+    torch.save(checkpoint, filepath)
+    print(f&quot;✓ Checkpoint saved: {filepath}&quot;)</code></pre>
+
+            <h4>Initialise Environment &amp; Networks</h4>
+            <p>The environment is created with <code>use_lidar=False</code> to get the compact state vector. The state dimension is read directly from the observation space so the network size adapts automatically if the environment changes.</p>
+            <p>All components — network, target network, replay buffer, trainer, and agent — are instantiated here and wired together before the training loop begins.</p>
+            <pre><code class="language-python"># ============================================================================
+# MODIFIED: INITIALIZE ENVIRONMENT (State-Based)
+# ============================================================================
+env = gym.make(&quot;FlappyBird-v0&quot;, use_lidar=False)
+num_actions = env.action_space.n
+state_dim = env.observation_space.shape[0]  # Should be 12
+
+print(f&quot;State dimension: {state_dim}&quot;)
+print(f&quot;Number of actions: {num_actions}&quot;)
+
+# Create networks
+q_net = StateDQN(state_dim, num_actions, hidden_dim=256).to(device)
+target_net = StateDQN(state_dim, num_actions, hidden_dim=256).to(device)
+target_net.load_state_dict(q_net.state_dict())
+target_net.eval()
+
+# Create components
+replay_buffer = SimpleReplayBuffer(REPLAY_BUFFER_SIZE)
+trainer = StateDQNTrainer(
+    q_net=q_net,
+    target_net=target_net,
+    replay_buffer=replay_buffer,
+    gamma=GAMMA,
+    lr=LEARNING_RATE,
+    batch_size=BATCH_SIZE,
+    target_update_freq=TARGET_UPDATE_FREQ,
+    device=device
+)
+agent = StateDQNAgent(
+    q_net=q_net,
+    num_actions=num_actions,
+    eps_start=EPS_START,
+    eps_end=EPS_END,
+    eps_decay_steps=EPS_DECAY_FRAMES
+)</code></pre>
+
+            <h4>Training Loop</h4>
+            <p>The training loop is structurally identical to the image-based version, but simpler: no frame rendering, no <code>FrameBuffer</code>, and no pixel preprocessing. The environment state is used directly at each step.</p>
+            <p>This simplicity is the main advantage of the state-based approach — the loop is easier to debug and runs significantly faster per episode, reaching convergence in far fewer wall-clock hours.</p>
+            <pre><code class="language-python"># ============================================================================
+# TRAINING LOOP
+# ============================================================================
+episode_rewards = []
+episode_lengths = []
+losses = []
+epsilon_history = []
+
+total_steps = 0
+episode = 0
+last_save = 0
+
+print(f&quot;\nStarting training for {TOTAL_FRAMES:,} frames...&quot;)
+print(f&quot;Training will start after {MIN_REPLAY_SIZE:,} frames\n&quot;)
+
+pbar = tqdm(total=TOTAL_FRAMES, desc=&quot;Training&quot;)
+
+try:
+    while total_steps &lt; TOTAL_FRAMES:
+        # Reset environment
+        state, info = env.reset()  # State is already a clean vector!
+
+        episode_reward = 0
+        episode_length = 0
+        done = False
+
+        while not done and total_steps &lt; TOTAL_FRAMES:
+            # Select action (no preprocessing needed!)
+            action = agent.act(state, device=device)
+
+            # Execute action with frame skipping
+            frame_reward = 0
+            for _ in range(FRAME_SKIP):
+                next_state, reward, terminated, truncated, info = env.step(action)
+                frame_reward += reward
+                total_steps += 1
+
+                if total_steps &gt;= TOTAL_FRAMES:
+                    done = True
+                    break
+
+                if terminated or truncated:
+                    done = True
+                    break
+
+            # Store transition (states are already vectors!)
+            replay_buffer.push(state, action, frame_reward, next_state, done)
+
+            # Train
+            if len(replay_buffer) &gt;= MIN_REPLAY_SIZE and total_steps % UPDATE_FREQ == 0:
+                loss = trainer.train_step()
+                if loss is not None:
+                    losses.append(loss)
+
+            # Save checkpoint periodically
+            if total_steps - last_save &gt;= SAVE_FREQ:
+                checkpoint_path = f&quot;{CHECKPOINT_DIR}/checkpoint_{total_steps}.pth&quot;
+                save_checkpoint(
+                    checkpoint_path, q_net, target_net, trainer.optimizer,
+                    total_steps, episode, episode_rewards, episode_lengths,
+                    train_steps=trainer.train_steps
+                )
+                last_save = total_steps
+
+            # Update state
+            state = next_state
+            episode_reward += frame_reward
+            episode_length += 1
+
+            # Update progress bar
+            pbar.update(FRAME_SKIP)
+
+            # Record epsilon
+            if total_steps % 1000 == 0:
+                epsilon_history.append((total_steps, agent.epsilon()))
+
+        # Episode ended
+        episode += 1
+        episode_rewards.append(episode_reward)
+        episode_lengths.append(episode_length)
+
+        # Print progress
+        if episode % 10 == 0:
+            avg_reward = np.mean(episode_rewards[-10:]) if len(episode_rewards) &gt;= 10 else np.mean(episode_rewards)
+            avg_length = np.mean(episode_lengths[-10:]) if len(episode_lengths) &gt;= 10 else np.mean(episode_lengths)
+            avg_loss = np.mean(losses[-100:]) if len(losses) &gt;= 100 else (np.mean(losses) if losses else 0)
+
+            pbar.set_postfix({
+                &#x27;Ep&#x27;: episode,
+                &#x27;Reward&#x27;: f&#x27;{avg_reward:.1f}&#x27;,
+                &#x27;ε&#x27;: f&#x27;{agent.epsilon():.3f}&#x27;,
+                &#x27;Loss&#x27;: f&#x27;{avg_loss:.4f}&#x27;
+            })
+
+except KeyboardInterrupt:
+    print(&quot;\n⚠️ Training interrupted by user&quot;)
+
+finally:
+    pbar.close()
+    env.close()
+
+    # Save final checkpoint
+    final_path = f&quot;{CHECKPOINT_DIR}/final_model_state_based.pth&quot;
+    save_checkpoint(
+        final_path, q_net, target_net, trainer.optimizer,
+        total_steps, episode, episode_rewards, episode_lengths,
+        train_steps=trainer.train_steps
+    )
+
+    print(&quot;\n✓ Training completed!&quot;)
+    print(f&quot;Total frames: {total_steps:,}&quot;)
+    print(f&quot;Total episodes: {episode}&quot;)</code></pre>
+
+          </section>
 
         <section id="results">
           <h2>Results</h2>
@@ -134,6 +1293,7 @@
     </div>
   </article>
 
+  <script>Prism.highlightAll();</script>
   <script src="blog-post-ui.js"></script>
   <footer class="site-footer">
     <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
