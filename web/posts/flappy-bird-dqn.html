@@ -96,20 +96,20 @@
           <h2>Image-based Approach</h2>
           <figure class="article-figure">
             <img src="../images/flappy_bird/algorithm.svg" alt="Image-based DQN algorithm">
-            <figcaption>The DQN training loop. At each step, the agent selects an action via an ε-greedy policy, stores the transition <em>(s, a, r, s')</em> in a replay buffer, then samples a random mini-batch to compute target Q-values using a separate target network. Gradients are clipped and the target network weights are periodically synced — both techniques stabilise training.</figcaption>
+            <figcaption>The DQN training loop. At each step, the agent selects an action via an ε-greedy policy, stores the transition <em>(s, a, r, s')</em> in a replay buffer, then samples a random mini-batch to compute target Q-values using a separate target network. Gradients are clipped and the target network weights are periodically synced - both techniques stabilise training.</figcaption>
           </figure>
           <section id="preprocessing">
             <h3>Frame Preprocessing</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/frame_processing.svg" alt="Frame preprocessing pipeline">
-              <figcaption>Each raw RGB frame is converted to grayscale, cropped to remove the ground and sky, and resized to 84×84 pixels. Four consecutive processed frames are then stacked into a single input tensor — giving the network a short-term sense of motion (bird velocity, pipe approach speed) without requiring recurrent layers.</figcaption>
+              <figcaption>Each raw RGB frame is converted to grayscale, cropped to remove the ground and sky, and resized to 84×84 pixels. Four consecutive processed frames are then stacked into a single input tensor - giving the network a short-term sense of motion (bird velocity, pipe approach speed) without requiring recurrent layers.</figcaption>
             </figure>
           </section>
           <section id="cnn-architecture">
             <h3>DQN Architecture</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/dqn_cnn.svg" alt="DQN CNN architecture">
-              <figcaption>The CNN takes a stack of 4 preprocessed frames (84×84×4) as input. Three convolutional layers progressively extract spatial features — edges, shapes, object positions — without any pooling, preserving spatial precision. The flattened feature map is passed through two fully connected layers, producing a Q-value for each possible action (flap or do nothing).</figcaption>
+              <figcaption>The CNN takes a stack of 4 preprocessed frames (84×84×4) as input. Three convolutional layers progressively extract spatial features - edges, shapes, object positions - without any pooling, preserving spatial precision. The flattened feature map is passed through two fully connected layers, producing a Q-value for each possible action (flap or do nothing).</figcaption>
             </figure>
           </section>
           <section id="training">
@@ -121,7 +121,7 @@
               </figure>
               <figure class="article-figure article-figure--primary">
                 <img src="../images/flappy_bird/image_based_loss.png" alt="Image-based agent training loss">
-                <figcaption>Training loss on a log scale over ~60k steps. The MA-100 curve drops sharply in the first 10k steps as the network fits initial experiences, then gradually decreases toward ~0.03 — suggesting the Q-value estimates become increasingly consistent as the target network stabilises.</figcaption>
+                <figcaption>Training loss on a log scale over ~60k steps. The MA-100 curve drops sharply in the first 10k steps as the network fits initial experiences, then gradually decreases toward ~0.03 - suggesting the Q-value estimates become increasingly consistent as the target network stabilises.</figcaption>
               </figure>
             </div>
           </section>
@@ -139,14 +139,14 @@
             <h3>DQN Architecture</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/nn_architecture.svg" alt="DQN neural network architecture">
-              <figcaption>A lightweight fully-connected network maps the 5-dimensional state vector to Q-values for each action. Two hidden layers with ReLU activations are sufficient here — unlike the pixel-based approach, no convolutional layers are needed since the input already encodes the relevant game state directly.</figcaption>
+              <figcaption>A lightweight fully-connected network maps the 5-dimensional state vector to Q-values for each action. Two hidden layers with ReLU activations are sufficient here - unlike the pixel-based approach, no convolutional layers are needed since the input already encodes the relevant game state directly.</figcaption>
             </figure>
           </section>
           <section id="training">
             <h3>Training the Agent</h3>
             <figure class="article-figure">
               <img src="../images/flappy_bird/state_based_result.png" alt="State-based agent training results">
-              <figcaption>The state-based agent converges much faster than its image-based counterpart — the MA-50 reward curve climbs steeply in the first 20k episodes before plateauing around +8 to +10, while the training loss stabilises quickly below 0.2. The compact state representation removes the burden of visual feature extraction, letting the network focus entirely on learning the control policy.</figcaption>
+              <figcaption>The state-based agent converges much faster than its image-based counterpart - the MA-50 reward curve climbs steeply in the first 20k episodes before plateauing around +8 to +10, while the training loss stabilises quickly below 0.2. The compact state representation removes the burden of visual feature extraction, letting the network focus entirely on learning the control policy.</figcaption>
             </figure>
           </section>
         </section>
@@ -171,7 +171,7 @@ import torch.nn.functional as F
 import torch.optim as optim</code></pre>
 
             <h4>Frame Preprocessing</h4>
-            <p>Each step, the environment returns an RGB frame. We convert it to grayscale and resize to 84×84. To capture motion, we take the element-wise maximum of two consecutive frames — this removes flickering artifacts common in Atari-style games.</p>
+            <p>Each step, the environment returns an RGB frame. We convert it to grayscale and resize to 84×84. To capture motion, we take the element-wise maximum of two consecutive frames - this removes flickering artifacts common in Atari-style games.</p>
             <p>The <code>preprocess()</code> function takes two consecutive raw frames and returns a single 84×84 grayscale array.</p>
             <pre><code class="language-python">def preprocess(prev_frame: np.ndarray, current_frame: np.ndarray) -&gt; np.ndarray:
   &quot;&quot;&quot;
@@ -196,7 +196,7 @@ import torch.optim as optim</code></pre>
   return rescaled_img</code></pre>
 
             <h4>Frame Buffer</h4>
-            <p>A single frame gives no sense of speed or direction. <code>FrameBuffer</code> maintains a rolling window of the last 4 preprocessed frames, stacking them into a <code>(4, 84, 84)</code> tensor — the actual input to the DQN.</p>
+            <p>A single frame gives no sense of speed or direction. <code>FrameBuffer</code> maintains a rolling window of the last 4 preprocessed frames, stacking them into a <code>(4, 84, 84)</code> tensor - the actual input to the DQN.</p>
             <p><code>FrameBuffer</code> initialises by repeating the first frame four times so the buffer is always full from step one.</p>
             <pre><code class="language-python">class FrameBuffer:
   &quot;&quot;&quot;
@@ -283,7 +283,7 @@ import torch.optim as optim</code></pre>
 
             <h4>DQN Network</h4>
             <p>The network follows the architecture from the original DQN paper: three convolutional layers to extract spatial features from stacked frames, followed by two fully-connected layers that output a Q-value for each action.</p>
-            <p>The <code>DQN</code> class uses a dummy forward pass with <code>torch.no_grad()</code> at init time to automatically compute the flattened size — no manual calculation needed.</p>
+            <p>The <code>DQN</code> class uses a dummy forward pass with <code>torch.no_grad()</code> at init time to automatically compute the flattened size - no manual calculation needed.</p>
             <pre><code class="language-python">class DQN(nn.Module):
   def __init__(self, num_actions):
     super().__init__()
@@ -378,7 +378,7 @@ import torch.optim as optim</code></pre>
 
             <h4>DQN Trainer</h4>
             <p>The trainer handles the core learning update: sampling a mini-batch, computing Bellman targets using the frozen target network, and updating the online network via RMSprop. The target network weights are copied from the online network every <code>C</code> steps.</p>
-            <p>States are normalised from <code>uint8</code> [0, 255] to <code>float32</code> [0, 1] only at training time — not during storage — saving significant memory. Huber loss (SmoothL1) is used instead of MSE to reduce sensitivity to outlier Q-value estimates.</p>
+            <p>States are normalised from <code>uint8</code> [0, 255] to <code>float32</code> [0, 1] only at training time - not during storage - saving significant memory. Huber loss (SmoothL1) is used instead of MSE to reduce sensitivity to outlier Q-value estimates.</p>
             <pre><code class="language-python">class DQNTrainer:
     def __init__(
         self,
@@ -507,7 +507,7 @@ os.makedirs(CHECKPOINT_DIR, exist_ok=True)</code></pre>
 
             <h4>Helper Functions</h4>
             <p>Two utility functions manage checkpointing: <code>save_checkpoint()</code> serialises the full training state (network weights, optimizer state, episode history) so training can be paused and resumed at any point.</p>
-            <p><code>initialize_training_state()</code> returns a unified state dictionary regardless of mode — downstream code never needs to branch on whether training is fresh or resumed.</p>
+            <p><code>initialize_training_state()</code> returns a unified state dictionary regardless of mode - downstream code never needs to branch on whether training is fresh or resumed.</p>
             <pre><code class="language-python"># ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
@@ -599,7 +599,7 @@ def initialize_training_state(mode, checkpoint_path=None):
         raise ValueError(f&quot;Invalid mode: {mode}. Use &#x27;fresh&#x27; or &#x27;resume&#x27;&quot;)</code></pre>
 
             <h4>Initialise Environment &amp; Networks</h4>
-            <p>We create the Flappy Bird environment in <code>rgb_array</code> render mode so we can capture raw pixel frames. Two identical DQN instances are created — the online network (<code>q_net</code>) is updated every step, while the target network is frozen and only periodically synced.</p>
+            <p>We create the Flappy Bird environment in <code>rgb_array</code> render mode so we can capture raw pixel frames. Two identical DQN instances are created - the online network (<code>q_net</code>) is updated every step, while the target network is frozen and only periodically synced.</p>
             <p>The target network is set to <code>eval()</code> mode and its weights are initialised from the online network. Components are wired together: replay buffer → trainer, frame buffer → preprocessing pipeline.</p>
             <pre><code class="language-python"># ============================================================================
 # INITIALIZE ENVIRONMENT AND NETWORKS
@@ -904,7 +904,7 @@ print(&quot;✓ Model downloaded!&quot;)</code></pre>
 
             <h4>Setup</h4>
             <p>Install the Flappy Bird Gymnasium package and explore the environment's observation space to understand what the state vector contains.</p>
-            <p>The environment exposes a 12-dimensional state vector including the bird's position, velocity, and relative distances to the next pipes — no pixel processing required.</p>
+            <p>The environment exposes a 12-dimensional state vector including the bird's position, velocity, and relative distances to the next pipes - no pixel processing required.</p>
             <pre><code class="language-python">!pip install flappy_bird_gymnasium
 
 import gymnasium as gym
@@ -963,7 +963,7 @@ print(f&quot;Using device: {device}&quot;)
 os.makedirs(CHECKPOINT_DIR, exist_ok=True)</code></pre>
 
             <h4>State DQN Network</h4>
-            <p>Because the input is already a clean numeric vector, a simple fully-connected network suffices — no convolutional layers needed. Three linear layers with ReLU activations map the state directly to Q-values.</p>
+            <p>Because the input is already a clean numeric vector, a simple fully-connected network suffices - no convolutional layers needed. Three linear layers with ReLU activations map the state directly to Q-values.</p>
             <p><code>StateDQN</code> is dramatically simpler and faster to train than the CNN: a 12-dimensional input, two hidden layers of 256 units, and a 2-dimensional output (flap or do nothing).</p>
             <pre><code class="language-python"># ============================================================================
 # STATE-BASED DQN NETWORK (Simple Fully Connected)
@@ -984,7 +984,7 @@ class StateDQN(nn.Module):
         return self.network(x)</code></pre>
 
             <h4>Replay Buffer</h4>
-            <p>Unlike the image-based buffer, there is no need to cast states to <code>uint8</code> — state vectors are already compact floats. Rewards are still clipped to stabilise training.</p>
+            <p>Unlike the image-based buffer, there is no need to cast states to <code>uint8</code> - state vectors are already compact floats. Rewards are still clipped to stabilise training.</p>
             <p><code>SimpleReplayBuffer</code> removes all the image-specific memory optimisations, keeping the implementation clean and straightforward.</p>
             <pre><code class="language-python"># ============================================================================
 # Simple Replay Buffer (No Image Preprocessing Needed)
@@ -1008,7 +1008,7 @@ class SimpleReplayBuffer:
 
             <h4>DQN Agent</h4>
             <p>The agent uses the same ε-greedy strategy as the image-based version. The key difference is that state inputs are plain float vectors rather than stacked image tensors, so no preprocessing is needed before the forward pass.</p>
-            <p><code>StateDQNAgent</code> accepts either a raw NumPy array or a Tensor — it handles both cases internally, simplifying the training loop.</p>
+            <p><code>StateDQNAgent</code> accepts either a raw NumPy array or a Tensor - it handles both cases internally, simplifying the training loop.</p>
             <pre><code class="language-python"># ============================================================================
 # DQN Agent (No Frame Stacking)
 # ============================================================================
@@ -1045,7 +1045,7 @@ class StateDQNAgent:
             return q_values.argmax(dim=1).item()</code></pre>
 
             <h4>DQN Trainer</h4>
-            <p>The trainer uses Adam instead of RMSprop — a common choice for state-based DQN since the loss landscape is smoother without the high-variance pixel inputs. No float normalisation is needed since state values are already in a reasonable range.</p>
+            <p>The trainer uses Adam instead of RMSprop - a common choice for state-based DQN since the loss landscape is smoother without the high-variance pixel inputs. No float normalisation is needed since state values are already in a reasonable range.</p>
             <p>The structure mirrors <code>DQNTrainer</code> exactly, making it easy to compare the two approaches. The only meaningful differences are the optimizer choice and the absence of uint8 → float32 conversion.</p>
             <pre><code class="language-python"># ============================================================================
 # DQN Trainer
@@ -1131,7 +1131,7 @@ def save_checkpoint(filepath, q_net, target_net, optimizer, total_steps, episode
 
             <h4>Initialise Environment &amp; Networks</h4>
             <p>The environment is created with <code>use_lidar=False</code> to get the compact state vector. The state dimension is read directly from the observation space so the network size adapts automatically if the environment changes.</p>
-            <p>All components — network, target network, replay buffer, trainer, and agent — are instantiated here and wired together before the training loop begins.</p>
+            <p>All components - network, target network, replay buffer, trainer, and agent - are instantiated here and wired together before the training loop begins.</p>
             <pre><code class="language-python"># ============================================================================
 # MODIFIED: INITIALIZE ENVIRONMENT (State-Based)
 # ============================================================================
@@ -1170,7 +1170,7 @@ agent = StateDQNAgent(
 
             <h4>Training Loop</h4>
             <p>The training loop is structurally identical to the image-based version, but simpler: no frame rendering, no <code>FrameBuffer</code>, and no pixel preprocessing. The environment state is used directly at each step.</p>
-            <p>This simplicity is the main advantage of the state-based approach — the loop is easier to debug and runs significantly faster per episode, reaching convergence in far fewer wall-clock hours.</p>
+            <p>This simplicity is the main advantage of the state-based approach - the loop is easier to debug and runs significantly faster per episode, reaching convergence in far fewer wall-clock hours.</p>
             <pre><code class="language-python"># ============================================================================
 # TRAINING LOOP
 # ============================================================================
@@ -1288,6 +1288,51 @@ finally:
 
         <section id="results">
           <h2>Results</h2>
+          <p>Both approaches successfully learned to play Flappy Bird, but with very different training dynamics. The table below summarises the key metrics after training.</p>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Image-based</th>
+                <th>State-based</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Input</td>
+                <td>4 × 84 × 84 stacked frames</td>
+                <td>12-dimensional state vector</td>
+              </tr>
+              <tr>
+                <td>Network</td>
+                <td>3 Conv layers + 2 FC layers</td>
+                <td>2 FC layers (256 hidden units)</td>
+              </tr>
+              <tr>
+                <td>Optimizer</td>
+                <td>RMSprop (lr = 2.5×10⁻⁴)</td>
+                <td>Adam (lr = 2.5×10⁻⁴)</td>
+              </tr>
+              <tr>
+                <td>Training frames</td>
+                <td>4M</td>
+                <td>5M</td>
+              </tr>
+              <tr>
+                <td>Avg. reward (MA-50)</td>
+                <td>~2.5</td>
+                <td>~9</td>
+              </tr>
+              <tr>
+                <td>Convergence speed</td>
+                <td>Slow - visible improvement after ~20k episodes</td>
+                <td>Fast - plateau reached by ~20k episodes</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>The state-based agent converges faster and achieves a higher average reward. This is expected - the state vector directly encodes everything the agent needs to know (bird velocity, pipe distances), so the network can focus entirely on learning the control policy rather than first having to figure out what is relevant in a 84×84 image.</p>
+          <p>The image-based agent learns more slowly because it must discover the relevant visual features from scratch through millions of pixel observations. Its reward curve is also noisier and plateaus lower, partly because raw pixel inputs produce higher-variance gradient estimates and partly because the reward shaping is harder without explicit positional information.</p>
+          <p>That said, the image-based approach is more general - it requires no hand-crafted state features and could in principle be applied to any game with minimal modification. The state-based approach works well here precisely because Flappy Bird's dynamics are simple enough to capture in a small vector; for more complex environments, designing such a vector becomes non-trivial.</p>
         </section>
       </div>
     </div>
