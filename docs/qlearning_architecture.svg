@@ -1,0 +1,53 @@
+<svg width="860" height="300" viewBox="0 0 860 300" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', Arial, sans-serif">
+  <rect width="860" height="300" fill="#fafafa" rx="12"/>
+  <text x="430" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="#1a1a2e">Q-Learning Architecture</text>
+
+  <!-- Environment -->
+  <rect x="30" y="110" width="130" height="56" rx="8" fill="#e8f4fd" stroke="#4a90d9" stroke-width="1.8"/>
+  <text x="95" y="136" text-anchor="middle" font-size="13" font-weight="600" fill="#1a3a5c">Environment</text>
+  <text x="95" y="154" text-anchor="middle" font-size="11" fill="#4a90d9">state  st</text>
+
+  <!-- Q-Table -->
+  <rect x="230" y="90" width="160" height="96" rx="8" fill="#fff7e6" stroke="#f0a500" stroke-width="1.8"/>
+  <text x="310" y="116" text-anchor="middle" font-size="13" font-weight="600" fill="#7a4f00">Q-Table</text>
+  <line x1="248" y1="124" x2="372" y2="124" stroke="#f0a500" stroke-width="0.8" stroke-dasharray="3,3"/>
+  <text x="284" y="140" text-anchor="middle" font-size="10" fill="#555">Q(s, flap)</text>
+  <text x="284" y="156" text-anchor="middle" font-size="10" fill="#555">Q(s, wait)</text>
+  <text x="348" y="140" text-anchor="middle" font-size="10" fill="#888">0.72</text>
+  <text x="348" y="156" text-anchor="middle" font-size="10" fill="#888">0.41</text>
+  <text x="310" y="175" text-anchor="middle" font-size="10" fill="#b8860b">lookup by state</text>
+
+  <!-- Policy -->
+  <rect x="460" y="110" width="150" height="56" rx="8" fill="#eaf7ea" stroke="#3aaa35" stroke-width="1.8"/>
+  <text x="535" y="136" text-anchor="middle" font-size="13" font-weight="600" fill="#1a4d1a">e-Greedy Policy</text>
+  <text x="535" y="154" text-anchor="middle" font-size="11" fill="#3aaa35">select action  at</text>
+
+  <!-- Update -->
+  <rect x="680" y="110" width="150" height="56" rx="8" fill="#fdeef3" stroke="#d44b78" stroke-width="1.8"/>
+  <text x="755" y="133" text-anchor="middle" font-size="13" font-weight="600" fill="#7a0033">Bellman Update</text>
+  <text x="755" y="149" text-anchor="middle" font-size="10" fill="#d44b78">Q(s,a) = Q(s,a) +</text>
+  <text x="755" y="163" text-anchor="middle" font-size="10" fill="#d44b78">a[r + y max Q(s',a')]</text>
+
+  <!-- Env to Q-Table -->
+  <line x1="160" y1="138" x2="228" y2="138" stroke="#4a90d9" stroke-width="1.8" marker-end="url(#arr-blue)"/>
+  <text x="194" y="128" text-anchor="middle" font-size="10" fill="#4a90d9">st</text>
+
+  <!-- Q-Table to Policy -->
+  <line x1="390" y1="138" x2="458" y2="138" stroke="#f0a500" stroke-width="1.8" marker-end="url(#arr-orange)"/>
+  <text x="424" y="128" text-anchor="middle" font-size="10" fill="#f0a500">Q-values</text>
+
+  <!-- Policy to Update -->
+  <line x1="610" y1="138" x2="678" y2="138" stroke="#3aaa35" stroke-width="1.8" marker-end="url(#arr-green)"/>
+  <text x="644" y="128" text-anchor="middle" font-size="10" fill="#3aaa35">at</text>
+
+  <!-- Update back to Env -->
+  <path d="M755 166 Q755 240 95 240 Q95 200 95 166" stroke="#d44b78" stroke-width="1.8" fill="none" marker-end="url(#arr-pink)" stroke-dasharray="5,3"/>
+  <text x="430" y="258" text-anchor="middle" font-size="10" fill="#d44b78">st+1, rt  (new state and reward from environment)</text>
+
+  <defs>
+    <marker id="arr-blue"   markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4a90d9"/></marker>
+    <marker id="arr-orange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f0a500"/></marker>
+    <marker id="arr-green"  markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#3aaa35"/></marker>
+    <marker id="arr-pink"   markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#d44b78"/></marker>
+  </defs>
+</svg>
