@@ -1,4 +1,9 @@
-"""Q-Learning Snake: state generation, game environment, agent, and training."""
+"""Q-Learning Snake: state generation, game environment, agent, and training.
+
+Provides state_generation, game (Snake, GameEnvironment, GameLogic), agent
+(QLearningAgent and helpers), and constants. For training and plotting, use
+q_learning.training (requires matplotlib and tqdm).
+"""
 
 from q_learning.agent import (
     QLearningAgent,

@@ -7,7 +7,11 @@ from q_learning.training import plot_learning_trajectories, run_training
 
 
 def main() -> None:
-    # Make runs reproducible
+    """Train Q-learning agents for three epsilon configs and plot learning curves.
+
+    Runs training with epsilon=0 (exploitation), 1 (exploration), and 0.1 (mixed),
+    then saves a single plot to learning_trajectories.png.
+    """
     random.seed(42)
 
     epsilon_configs = {

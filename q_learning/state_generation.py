@@ -64,6 +64,7 @@ def generate_connected_placements(length: int, grid_size: int) -> List[Tuple]:
     placements = set()
 
     def dfs(path):
+        """Recursive DFS: extend path to desired length and record unique placements."""
         # If the path has reached the desired length, record it
         if len(path) == length:
             placements.add(tuple(sorted(path)))

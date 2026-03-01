@@ -1,4 +1,10 @@
-"""Constants and default configuration for Q-Learning Snake."""
+"""Constants and default configuration for Q-Learning Snake.
+
+- DIRECTIONS: Map from direction name to (dr, dc) for row/column delta.
+- ACTIONS: Relative actions for the agent (turn_left, go_straight, turn_right, turn_around).
+- HEAD_DIRECTIONS: Direction names used in state representation.
+- GRID_SIZE, LEARNING_RATE, NUM_EPISODES, MAX_STEPS_PER_EPISODE, MOVING_AVG_WINDOW: Default hyperparameters.
+"""
 
 # Direction name -> (dr, dc) for row/col
 DIRECTIONS = {

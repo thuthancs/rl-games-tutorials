@@ -29,6 +29,16 @@ python -m q_learning.main
 
 This runs training for three epsilon regimes and saves `learning_trajectories.png` in the current directory.
 
+## Run tests
+
+From repo root (install dependencies first: `pip install -r q_learning/requirements.txt`):
+
+```bash
+python -m pytest q_learning/tests -v
+```
+
+Tests cover state generation (`neighbors`, `dir_from`, placements, `generate_all_valid_states`, `count_states_by_length`), game logic (move, wall/self collision, eating food), and the agent (`get_current_direction`, `get_direction`, `get_state_representation`, `QLearningAgent` set_q_table, get_q_value, choose_action, update_q_value).
+
 ## Use as a library
 
 ```python

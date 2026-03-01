@@ -9,7 +9,14 @@ from q_learning.state_generation import generate_all_valid_states
 
 
 def get_current_direction(snake_positions: list) -> str:
-    """Determine snake's current direction from head and neck position."""
+    """Determine the snake's current facing from head and neck positions.
+
+    Args:
+        snake_positions: List of (row, col) cells, head first.
+
+    Returns:
+        One of 'upward', 'downward', 'leftward', 'rightward'. Defaults to 'rightward' if length < 2.
+    """
     if len(snake_positions) < 2:
         return "rightward"  # Default
 
@@ -26,7 +33,14 @@ def get_current_direction(snake_positions: list) -> str:
 
 
 def get_state_representation(game: GameLogic) -> Tuple:
-    """Convert GameLogic to state tuple: (head_pos, head_dir, body_tuple, food_pos)."""
+    """Convert the current game state to the Q-learning state tuple.
+
+    Args:
+        game: Current GameLogic instance.
+
+    Returns:
+        (head_pos, head_dir, body_tuple, food_pos) for use as Q-table key.
+    """
     head_pos = game.Snake.snake_positions[0]
     head_dir = get_current_direction(game.Snake.snake_positions)
 
@@ -37,7 +51,15 @@ def get_state_representation(game: GameLogic) -> Tuple:
 
 
 def get_direction(action: str, current_direction: str) -> Tuple[int, int]:
-    """Convert relative action to absolute direction tuple."""
+    """Convert a relative action into an absolute (dr, dc) direction.
+
+    Args:
+        action: One of 'turn_left', 'go_straight', 'turn_right', 'turn_around'.
+        current_direction: Current facing: 'upward', 'downward', 'leftward', or 'rightward'.
+
+    Returns:
+        (dr, dc) tuple for applying to head position.
+    """
     turns = {
         "upward": {
             "turn_left": "leftward",
@@ -69,6 +91,8 @@ def get_direction(action: str, current_direction: str) -> Tuple[int, int]:
 
 
 class QLearningAgent:
+    """Epsilon-greedy Q-learning agent with tabular Q(s, a)."""
+
     REWARD_FOOD = 10
     REWARD_DEATH = -10
     REWARD_STEP = 0
@@ -101,7 +125,7 @@ class QLearningAgent:
         self.num_episodes = num_episodes
 
     def set_q_table(self) -> Dict:
-        """Initialize the Q-table with all valid game states."""
+        """Initialize the Q-table with all valid game states and zero Q-values. Returns self.q_table."""
         self.q_table = generate_all_valid_states(self.grid_size, self.actions)
 
         for action in self.actions:
@@ -110,10 +134,11 @@ class QLearningAgent:
         return self.q_table
 
     def get_q_value(self, state: Tuple, action: str) -> float:
+        """Return Q(state, action); 0.0 if state or action is missing."""
         return self.q_table.get(state, {}).get(action, 0.0)
 
     def choose_action(self, state: Tuple, epsilon: float) -> str:
-        # Epsilon-greedy action selection
+        """Epsilon-greedy action: with probability epsilon random, else greedy (break ties by action order)."""
         if random.uniform(0, 1) < epsilon:
             return random.choice(self.actions)
         else:

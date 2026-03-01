@@ -28,14 +28,21 @@ def run_training(
     grid_size: int = GRID_SIZE,
     learning_rate: float = 0.2,
 ) -> List[float]:
-    """
-    Train a fresh Q-learning agent for a given training epsilon and,
-    after each training episode, run a separate evaluation episode
-    with epsilon = 0.0. Returns the per-episode evaluation scores
-    over num_episodes.
+    """Train a Q-learning agent and return evaluation scores per episode.
 
-    Training uses epsilon = train_epsilon, evaluation uses epsilon = 0.0
-    (pure exploitation of the learned Q-table).
+    For each episode, one training step (with train_epsilon) is followed by one
+    evaluation episode (epsilon=0, pure exploitation). The evaluation score
+    is appended to the returned list.
+
+    Args:
+        train_epsilon: Exploration probability during training.
+        gamma: Discount factor for future rewards.
+        num_episodes: Number of training (and evaluation) episodes.
+        grid_size: Side length of the grid.
+        learning_rate: Q-learning step size.
+
+    Returns:
+        List of length num_episodes: evaluation score after each training episode.
     """
     agent = QLearningAgent(
         actions=ACTIONS,
@@ -121,9 +128,16 @@ def run_training(
 
 
 def moving_average(values: List[float], window_size: int) -> List[float]:
-    """
-    Compute a simple moving average over the given values.
-    The output list has the same length as the input list.
+    """Compute a simple moving average over the given values.
+
+    Args:
+        values: Sequence of numbers to smooth.
+        window_size: Number of recent values to average (or fewer at the start).
+
+    Returns:
+        List of same length as values; each element is the average of the
+        current and previous (window_size - 1) values, or all values so far
+        near the start.
     """
     if not values or window_size <= 1:
         return values
@@ -148,8 +162,13 @@ def plot_learning_trajectories(
     window_size: int = MOVING_AVG_WINDOW,
     save_path: str = "learning_trajectories.png",
 ) -> None:
-    """
-    Plot smoothed average score per episode for each epsilon regime.
+    """Plot smoothed (moving-average) score per episode for each series and save to file.
+
+    Args:
+        results: Dict mapping legend label to list of per-episode scores.
+        num_episodes: Number of episodes (x-axis length).
+        window_size: Moving average window for smoothing.
+        save_path: Output path for the PNG figure.
     """
     episodes = list(range(1, num_episodes + 1))
 
