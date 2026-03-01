@@ -718,6 +718,10 @@ if __name__ == "__main__":
         <section id="results">
           <h2>Results and Takeaways</h2>
           <p>After training for several thousand episodes, our Q-learning agent should learn to navigate the snake toward food while avoiding walls and its own tail. Performance will depend on state representation and hyperparameters like learning rate and exploration rate.</p>
+          <figure class="article-figure">
+            <img src="../../images/snake_game/output_snake.png" alt="Snake Q-learning training output">
+            <figcaption><strong>Learning trajectories.</strong> Smoothed evaluation score per episode for different exploration rates (ε). With <em>pure exploitation</em> (ε=0) from the start, the agent never explores and cannot discover better actions, so performance stays flat. With <em>pure exploration</em> (ε=1), actions are random every step and the agent does not exploit what it has learned, so scores remain low. A <em>mixed</em> setting (e.g. ε=0.1) balances exploration and exploitation: the agent improves over episodes as the Q-table is updated and evaluation runs (ε=0) reflect that learned policy.</figcaption>
+          </figure>
           <p>This simple setup lays the groundwork for more advanced methods like Deep Q-Networks (DQN), which we'll explore in the Flappy Bird tutorial.</p>
         </section>
 
