@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multiagent Reinforcement Learning: Coin Collection Game - Tinker & Play</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</head>
+
+<body>
+  <div class="scroll-progress-wrap"><div class="scroll-progress-bar" id="scrollBar"></div></div>
+
+  <header class="site-header">
+    <a href="../index.html" class="site-title">Tinker & Play</a>
+    <nav class="site-nav">
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <article class="blog-article">
+    <header class="article-header">
+      <h1 class="article-title">Multiagent Reinforcement Learning: Coin Collection Game</h1>
+      <p class="article-subtitle">Two agents, one grid, competing goals. We build a MARL environment from scratch, expose the curse of dimensionality in tabular Q-learning, and fix it with a compact state representation.</p>
+      <figure class="article-figure">
+        <img src="../images/marl/marl_compact_episode.gif" alt="Two agents collecting coins in the grid world">
+      </figure>
+      <div class="article-meta">
+        <div class="meta-column">
+          <span class="meta-label">Author</span>
+          <span class="meta-value">Thu Than</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Published</span>
+          <span class="meta-value">Mar. 1, 2026</span>
+        </div>
+        <div class="meta-column">
+          <span class="meta-label">Topics</span>
+          <span class="meta-value">MARL, Q-Learning, Game Theory</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <aside class="article-toc">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#game-theory">Game Theory Concepts</a></li>
+            <li><a href="#environment">The Environment</a></li>
+            <li>
+              <a href="#independent-q-learning">Independent Q-Learning</a>
+              <ul class="toc-sublist">
+                <li><a href="#state-space-problem">The State Space Problem</a></li>
+                <li><a href="#original-results">Results: Original State</a></li>
+              </ul>
+            </li>
+            <li>
+              <a href="#compact-state">Compact State Representation</a>
+              <ul class="toc-sublist">
+                <li><a href="#nearest-coin-delta">Nearest-Coin Delta</a></li>
+                <li><a href="#compact-results">Results: Compact State</a></li>
+              </ul>
+            </li>
+            <li><a href="#comparison">Competitive vs Cooperative</a></li>
+            <li><a href="#game-theory-analysis">Game Theory Analysis</a></li>
+            <li>
+              <a href="#code">Code Implementation</a>
+              <ul class="toc-sublist">
+                <li><a href="#code-env">Environment</a></li>
+                <li><a href="#code-agent">Agent</a></li>
+                <li><a href="#code-training">Training Loop</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div class="article-content">
+
+        <!-- ── Introduction ─────────────────────────────────────── -->
+        <section id="introduction">
+          <h2>Introduction</h2>
+          <p>Single-agent reinforcement learning has a clean setup: one agent, one environment, one reward signal. Multiagent reinforcement learning (MARL) breaks all three assumptions simultaneously. When multiple learning agents share an environment, the world each agent perceives is non-stationary - it changes as the other agents learn. This makes convergence guarantees from single-agent theory largely irrelevant.</p>
+          <p>In this tutorial we build a two-agent coin collection game from scratch, implement Independent Q-Learning, and use it as a lens to examine several game-theory concepts: Nash equilibria, the tragedy of the commons, and Pareto efficiency gaps. Along the way we hit a concrete version of the curse of dimensionality and fix it with a compact state representation that reduces the effective state space by a factor of ~4,000.</p>
+          <p>The full, modular implementation is available in the repository under <code>algorithms/multiagent_rl/</code>. Each module is small enough to read in one sitting.</p>
+        </section>
+
+        <!-- ── Game Theory Concepts ─────────────────────────────── -->
+        <section id="game-theory">
+          <h2>Game Theory Concepts</h2>
+          <p>Before implementing anything, it helps to understand the game-theoretic vocabulary that MARL inherits. Each concept below will appear concretely in our results.</p>
+
+          <h3>Nash Equilibrium</h3>
+          <p>A joint policy is a Nash equilibrium if no single agent can improve its own expected reward by unilaterally changing its strategy, assuming all other agents hold their policies fixed. In practice this is verified empirically: we check whether agent A gains by deviating to a fixed "Stay" policy while agent B plays its learned strategy. If the deviation gain is small (less than 0.05 reward), we declare the policy approximately Nash-stable.</p>
+
+          <h3>Cooperative vs Competitive Reward</h3>
+          <p>The same environment can encode radically different incentive structures. In <strong>competitive</strong> mode, only the agent that steps on a coin earns a reward (+1.0). In <strong>cooperative</strong> mode, collecting any coin gives both agents +0.5. The game dynamics are identical - only the reward split changes - but this drives agents toward very different emergent behaviours.</p>
+
+          <h3>Tragedy of the Commons</h3>
+          <p>When resources are shared and agents optimise selfishly, total welfare can be lower than what a socially-optimal policy would achieve. We measure this as the <strong>Pareto gap</strong>: the difference in total coins collected per episode between the joint learned policy and a single oracle agent. A large gap in competitive mode signals the tragedy of the commons.</p>
+
+          <h3>Non-Stationarity</h3>
+          <p>The most fundamental challenge in MARL: from agent A's perspective, the environment transitions are determined partly by agent B's policy. As B learns and changes its behaviour, A's transition function changes underneath it. This violates the stationarity assumption required by standard Q-learning convergence proofs and is the reason independent learners can fail even in simple environments.</p>
+        </section>
+
+        <!-- ── Environment ──────────────────────────────────────── -->
+        <section id="environment">
+          <h2>The Environment</h2>
+          <p>The coin collection game is a 6x6 grid world. Two agents (A and B) and four coins are placed at random positions at the start of each episode. Agents move simultaneously, one step per timestep, choosing from five actions: Up, Down, Left, Right, Stay. Grid walls act as hard boundaries. When an agent steps onto a coin, it is collected and a new coin immediately respawns at a random empty cell, keeping the total coin count constant throughout the episode. Each episode runs for a fixed number of steps (50 by default).</p>
+          <p>The environment is implemented as a Python dataclass with three public methods: <code>reset()</code> returns the initial state, <code>step(actions)</code> advances one timestep and returns <code>(next_state, rewards, done, info)</code>, and <code>render_ascii()</code> prints the current grid to the terminal.</p>
+          <p>The only difference between the two reward modes is a single branch inside <code>step()</code>:</p>
+          <ul>
+            <li><strong>Competitive:</strong> <code>rewards[i] += 1.0</code> - only the collecting agent is rewarded.</li>
+            <li><strong>Cooperative:</strong> <code>rewards[0] += 0.5; rewards[1] += 0.5</code> - both agents share every coin.</li>
+          </ul>
+        </section>
+
+        <!-- ── Independent Q-Learning ───────────────────────────── -->
+        <section id="independent-q-learning">
+          <h2>Independent Q-Learning</h2>
+          <p>Independent Q-Learning (IQL) is the simplest MARL baseline: each agent runs a standard Q-learning update as if the other agent does not exist, treating the joint environment as a black box. There is no communication, no coordination mechanism, and no explicit modelling of the other agent's policy.</p>
+          <p>Each agent maintains its own Q-table and updates it with the standard Bellman equation after every step:</p>
+          <blockquote>
+            <p>Q(s, a) &larr; Q(s, a) + &alpha; [ r + &gamma; &middot; max<sub>a'</sub> Q(s', a') - Q(s, a) ]</p>
+          </blockquote>
+          <p>Action selection follows an &epsilon;-greedy policy: with probability &epsilon; the agent explores randomly, otherwise it acts greedily. &epsilon; decays multiplicatively each episode from 1.0 down to a minimum of 0.05.</p>
+
+          <h3 id="state-space-problem">The State Space Problem</h3>
+          <p>The original state tuple is <code>(agent0_pos, agent1_pos, frozenset(coin_positions))</code>. This looks compact in code, but consider the size:</p>
+          <ul>
+            <li>Agent positions: 36 x 36 = 1,296 combinations</li>
+            <li>Coin positions: C(36, 4) = <strong>58,905</strong> combinations for 4 coins on 36 cells</li>
+            <li>Total state space: 1,296 x 58,905 &asymp; <strong>76 million</strong> states</li>
+          </ul>
+          <p>With 5,000 episodes x 50 steps each, we generate 250,000 transitions total. That is one transition per 304 states on average. In practice the distribution is far from uniform - most states are visited zero times, a few are visited once. Q-values for unvisited states remain at their initial value of zero, and the greedy policy over near-zero Q-values degrades to a fixed, suboptimal bias as &epsilon; decays toward its minimum.</p>
+          <p>The result is a paradox: the more training progresses and exploration decreases, the worse the policy gets, because the Q-table coverage is insufficient to sustain a meaningful greedy policy.</p>
+
+          <h3 id="original-results">Results: Original State</h3>
+          <figure class="article-figure">
+            <img src="../images/marl/marl_comparison.png" alt="Original state: competitive vs cooperative comparison">
+            <figcaption>Training curves with the original frozenset state representation. All three metrics decline over 5,000 episodes - rewards, coins collected, and TD error all fall as epsilon decays. This is the curse of dimensionality in action: as exploration shrinks, agents commit to policies grounded in near-zero Q-values, performing worse than random. Cooperative and competitive curves are nearly indistinguishable because neither mode has learned anything meaningful.</figcaption>
+          </figure>
+          <div class="article-figure-group">
+            <figure class="article-figure article-figure--primary">
+              <img src="../images/marl/marl_heatmaps_competitive.png" alt="Q-value heatmaps: competitive, original state">
+              <figcaption>Q-value heatmaps (competitive mode, original state). The values are uniformly low across the grid - agents have not developed positional preferences because so few states in their Q-tables have been updated more than once.</figcaption>
+            </figure>
+            <figure class="article-figure article-figure--primary">
+              <img src="../images/marl/marl_heatmaps_cooperative.png" alt="Q-value heatmaps: cooperative, original state">
+              <figcaption>Q-value heatmaps (cooperative mode, original state). The pattern is similar to the competitive case - uniform low values, no spatial structure. The reward signal has not been propagated reliably enough for the grid position to gain meaning.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ── Compact State ────────────────────────────────────── -->
+        <section id="compact-state">
+          <h2>Compact State Representation</h2>
+          <p>The fix is to remove information the agent cannot generalise from. The frozenset of all coin positions tells an agent exactly where every coin is, but the agent can only be in one cell at a time - the positions of distant coins are largely irrelevant to its immediate decision. What matters is: where is the nearest coin relative to me?</p>
+
+          <h3 id="nearest-coin-delta">Nearest-Coin Delta</h3>
+          <p>We replace <code>frozenset(coin_positions)</code> with the Manhattan-nearest coin offset <code>(dr, dc)</code> for each agent, where <code>dr = coin_row - agent_row</code> and <code>dc = coin_col - agent_col</code>. The new state is:</p>
+          <blockquote>
+            <p><code>(agent0_pos, agent1_pos, nearest_coin_delta_0, nearest_coin_delta_1)</code></p>
+          </blockquote>
+          <p>On a 6x6 grid, <code>dr</code> and <code>dc</code> each range over [-5, 5], giving 11 x 11 = 121 possible delta values per agent. The new state space is 36 x 36 x 121 x 121 &asymp; <strong>19 million</strong> - still large in theory, but crucially different in practice.</p>
+          <p>The key insight is <strong>state aliasing working in our favour</strong>. The same <code>(agent_pos, coin_delta)</code> pattern occurs in many different actual board configurations. Every time agent A is at position (2, 3) with the nearest coin one step to the right, it gets the same state key regardless of where agent B is or where the other coins are. That state gets updated repeatedly, the Q-value converges to something meaningful, and the policy generalises across situations it has never literally seen before.</p>
+          <p>In practice, the visited Q-table size with the compact representation settles around 10,000-50,000 entries - small enough that 250,000 transitions provide useful coverage.</p>
+
+          <h3 id="compact-results">Results: Compact State</h3>
+          <figure class="article-figure">
+            <img src="../images/marl/marl_compact_training_competitive.png" alt="Compact state: competitive training curves">
+            <figcaption>Training curves for the compact state, competitive mode. Rewards rise steadily from ~2.0 to over 3.5 and coins collected per episode climb from ~3.5 toward 6+. The TD error also rises - not a sign of instability, but of a growing reward signal as agents collect more coins. This is the contrast with the original: here the training signal is productive.</figcaption>
+          </figure>
+          <figure class="article-figure">
+            <img src="../images/marl/marl_compact_training_cooperative.png" alt="Compact state: cooperative training curves">
+            <figcaption>Training curves for the compact state, cooperative mode. The reward and coin collection trends mirror the competitive case, with slightly different noise characteristics. Cooperative agents experience less incentive conflict, but on this task the navigation challenge is symmetric so convergence speed is similar.</figcaption>
+          </figure>
+          <div class="article-figure-group">
+            <figure class="article-figure article-figure--primary">
+              <img src="../images/marl/marl_compact_heatmaps_competitive.png" alt="Q-value heatmaps: competitive, compact state">
+              <figcaption>Q-value heatmaps (competitive, compact state). Clear spatial structure has emerged: higher max-Q values appear near the edges and corners where coins tend to concentrate after respawns, and lower values in central cells where competition with agent B is higher.</figcaption>
+            </figure>
+            <figure class="article-figure article-figure--primary">
+              <img src="../images/marl/marl_compact_heatmaps_cooperative.png" alt="Q-value heatmaps: cooperative, compact state">
+              <figcaption>Q-value heatmaps (cooperative, compact state). The spatial gradient is smoother than the competitive case - cooperative agents do not need to race to specific cells, so Q-values spread more evenly across the grid. Hints of territory division are visible: agent A concentrates value in one region, agent B in another.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ── Comparison ───────────────────────────────────────── -->
+        <section id="comparison">
+          <h2>Competitive vs Cooperative</h2>
+          <figure class="article-figure">
+            <img src="../images/marl/marl_compact_comparison.png" alt="Compact state: competitive vs cooperative head-to-head">
+            <figcaption>Head-to-head comparison of competitive (dashed) and cooperative (solid) training runs over 10,000 episodes using the compact state representation. Left: individual rewards climb in both modes, with competitive agents edging slightly higher because the +1.0 per-coin reward creates a stronger individual gradient. Centre: total coins collected per episode (social welfare) - cooperative agents collect marginally more in the long run, as they avoid the interference cost of racing. Right: TD error rises in both modes due to growing rewards, with competitive TD error slightly higher reflecting more volatile Q-value updates from a winner-takes-all reward.</figcaption>
+          </figure>
+          <p>The competitive-cooperative gap is present but modest on this task. Both modes solve the navigation problem similarly well because the coin respawn mechanism keeps density constant - there is always something to collect nearby. The gap would widen on tasks where resource scarcity forces agents to make explicit tradeoffs.</p>
+          <p>The curves still trend upward at episode 10,000, suggesting agents have not fully converged. Running for 20,000-50,000 episodes would likely reveal a plateau and a clearer separation between the two modes.</p>
+        </section>
+
+        <!-- ── Game Theory Analysis ─────────────────────────────── -->
+        <section id="game-theory-analysis">
+          <h2>Game Theory Analysis</h2>
+          <p>After training, we run a structured evaluation to quantify the game-theoretic properties of the learned policies. All metrics below are computed over 300 greedy rollout episodes.</p>
+
+          <h3>Nash Stability</h3>
+          <p>We test whether agent A can gain by deviating to a fixed "Stay" policy while agent B plays its learned greedy policy. The deviation gain (stay reward minus trained policy reward) is negative or near zero for both modes, indicating the learned joint policy is approximately Nash-stable. Neither agent has an incentive to unilaterally stop moving - standing still while the other agent collects all coins is strictly worse.</p>
+
+          <h3>Pareto Efficiency Gap</h3>
+          <p>We compare total coins collected under the joint policy against an oracle - a single agent using its learned policy with the other agent frozen. The gap measures how much welfare is lost due to competitive dynamics or coordination failure.</p>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Competitive</th>
+                <th>Cooperative</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Avg coins / episode (joint)</td>
+                <td>~5.5</td>
+                <td>~6.0</td>
+              </tr>
+              <tr>
+                <td>Avg coins / episode (single oracle)</td>
+                <td>~4.5</td>
+                <td>~4.8</td>
+              </tr>
+              <tr>
+                <td>Pareto gap</td>
+                <td>-1.0 (joint is better)</td>
+                <td>-1.2 (joint is better)</td>
+              </tr>
+              <tr>
+                <td>Nash stability (deviation gain)</td>
+                <td>&lt; 0</td>
+                <td>&lt; 0</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Interestingly, the joint policy outperforms the single oracle on this task - two agents cover the grid more efficiently than one. The Pareto gap is negative in both modes, meaning the tragedy of the commons does not manifest strongly here. The coin respawn mechanism naturally prevents over-exploitation by keeping coin density constant regardless of collection rate.</p>
+
+          <h3>Action Distribution</h3>
+          <p>Inspecting the greedy action distribution reveals that agents trained with the compact state heavily favour directional moves over "Stay", with a roughly balanced distribution across Up/Down/Left/Right. This is consistent with a coin-chasing policy: if you know the nearest coin is always in some direction, staying still is suboptimal. The original state representation, by contrast, produces a much flatter distribution approaching uniform - consistent with agents that have not learned anything useful.</p>
+        </section>
+
+        <!-- ── Code ─────────────────────────────────────────────── -->
+        <section id="code">
+          <h2>Code Implementation</h2>
+          <p>The implementation is split into seven modules. The dependency graph flows strictly downward - <code>config</code> &larr; <code>env</code> &larr; <code>agent</code> &larr; <code>analysis</code> &larr; <code>training</code> &larr; <code>plotting</code> &larr; <code>visualization</code> &larr; <code>main</code>. Each module can be imported and used independently without pulling in the full pipeline.</p>
+
+          <h3 id="code-env">Environment</h3>
+          <p>The environment is a Python dataclass. The compact state variant adds one method, <code>_nearest_coin_delta()</code>, and modifies <code>_state()</code> to return it instead of the full frozenset. Everything else is identical between the two variants.</p>
+          <pre><code class="language-python">def _nearest_coin_delta(self, agent_idx: int) -> Tuple[int, int]:
+    """Return (dr, dc) from agent to its nearest coin by Manhattan distance."""
+    pos = self.agent_positions[agent_idx]
+    if not self.coin_positions:
+        return (0, 0)
+    return min(
+        ((cp[0] - pos[0], cp[1] - pos[1]) for cp in self.coin_positions),
+        key=lambda d: abs(d[0]) + abs(d[1]),
+    )
+
+def _state(self) -> tuple:
+    """Compact state: agent positions + nearest-coin offset for each agent."""
+    return (
+        self.agent_positions[0],
+        self.agent_positions[1],
+        self._nearest_coin_delta(0),
+        self._nearest_coin_delta(1),
+    )</code></pre>
+
+          <h3 id="code-agent">Agent</h3>
+          <p>The agent is state-representation-agnostic - it stores Q-values keyed by whatever tuple <code>_state()</code> returns. The Q-table is a <code>defaultdict</code> that initialises every unseen state with zeros, so there is no explicit initialisation step. The <code>value_map()</code> method aggregates Q-values over grid cells for heatmap visualisation, using the fact that the agent's own position is always at index 0 or 1 in the state tuple regardless of what follows.</p>
+          <pre><code class="language-python">class QLearningAgent:
+    def __init__(self, agent_id, alpha=0.10, gamma=0.95,
+                 epsilon_start=1.0, epsilon_end=0.05, epsilon_decay=0.9995):
+        self.q_table = defaultdict(lambda: np.zeros(NUM_ACTIONS))
+        self.epsilon = epsilon_start
+        ...
+
+    def select_action(self, state, greedy=False) -> int:
+        if not greedy and random.random() < self.epsilon:
+            return random.randint(0, NUM_ACTIONS - 1)
+        return int(np.argmax(self.q_table[state]))
+
+    def update(self, state, action, reward, next_state):
+        best_next = float(np.max(self.q_table[next_state]))
+        td_target = reward + self.gamma * best_next
+        td_error  = td_target - self.q_table[state][action]
+        self.q_table[state][action] += self.alpha * td_error</code></pre>
+
+          <h3 id="code-training">Training Loop</h3>
+          <p>Both agents update simultaneously after each step using their own reward signal. TD error is logged before the update (not after) so it reflects the true prediction error at that moment. Epsilon decays per episode, not per step, to ensure smooth exploration schedules regardless of episode length.</p>
+          <pre><code class="language-python">for ep in range(cfg.num_episodes):
+    state = env.reset()
+
+    for _ in range(cfg.max_steps):
+        actions    = [agents[i].select_action(state) for i in range(2)]
+        next_state, rewards, _, info = env.step(actions)
+
+        for i in range(2):
+            # log TD error before update
+            best_next = float(np.max(agents[i].q_table[next_state]))
+            td_err    = abs(rewards[i] + cfg.gamma * best_next
+                            - agents[i].q_table[state][actions[i]])
+            agents[i].update(state, actions[i], rewards[i], next_state)
+
+        state = next_state
+
+    for i in range(2):
+        agents[i].decay_epsilon()  # once per episode</code></pre>
+          <p>The full pipeline - training both modes, running game-theory analysis, generating all plots and an animated episode replay - is invoked with a single command:</p>
+          <pre><code class="language-python">cd algorithms/multiagent_rl/compact_state
+python main.py          # full run: 10,000 episodes
+python main.py --quick  # fast test: 1,000 episodes</code></pre>
+        </section>
+
+      </div>
+    </div>
+  </article>
+
+  <script>Prism.highlightAll();</script>
+  <script>
+(function () {
+  var clipboardIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  var checkIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  document.querySelectorAll('.article-content pre').forEach(function (pre) {
+    if (pre.closest('.code-block-wrap')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'code-block-wrap';
+    pre.parentNode.insertBefore(wrap, pre);
+    wrap.appendChild(pre);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'code-copy-btn';
+    btn.setAttribute('aria-label', 'Copy code');
+    btn.setAttribute('title', 'Copy code');
+    btn.innerHTML = clipboardIcon;
+    wrap.insertBefore(btn, pre);
+    btn.addEventListener('click', function () {
+      var code = pre.querySelector('code');
+      var text = (code || pre).textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          btn.classList.add('copied');
+          btn.setAttribute('aria-label', 'Copied!');
+          btn.innerHTML = checkIcon;
+          setTimeout(function () {
+            btn.classList.remove('copied');
+            btn.setAttribute('aria-label', 'Copy code');
+            btn.innerHTML = clipboardIcon;
+          }, 2000);
+        });
+      }
+    });
+  });
+})();
+  </script>
+  <script src="blog-post-ui.js"></script>
+  <footer class="site-footer">
+    <p>&copy; 2026 Tinker & Play by Thu Than. Tutorials and experiments on reinforcement learning.</p>
+  </footer>
+</body>
+
+</html>
