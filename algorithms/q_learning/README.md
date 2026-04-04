@@ -2,6 +2,8 @@
 
 Python package extracted from `notebooks/q_learning_snake.ipynb`. Implements state generation, game environment, Q-learning agent, and training/plotting for the Snake game.
 
+**Algorithm specification (ALGO-HC):** [ALGORITHM.md](ALGORITHM.md) — formal inputs/outputs, numbered steps, algorithm type, properties, complexity, data structures, flowchart, test/edge-case references, and proposed efficiency improvements.
+
 ## Structure
 
 - **`state_generation.py`** – Generate all valid game states: `neighbors`, `dir_from`, `generate_connected_placements`, `head_dir_pairs_for_placement`, `generate_all_valid_states`, `count_states_by_length`.
@@ -37,7 +39,7 @@ From repo root (install dependencies first: `pip install -r q_learning/requireme
 python -m pytest q_learning/tests -v
 ```
 
-Tests cover state generation (`neighbors`, `dir_from`, placements, `generate_all_valid_states`, `count_states_by_length`), game logic (move, wall/self collision, eating food), and the agent (`get_current_direction`, `get_direction`, `get_state_representation`, `QLearningAgent` set_q_table, get_q_value, choose_action, update_q_value).
+Tests cover state generation (`neighbors`, `dir_from`, placements, `generate_all_valid_states`, `count_states_by_length`), game logic (move, wall/self collision, eating food), and the agent (`get_current_direction`, `get_direction`, `get_state_representation`, `QLearningAgent` set_q_table, get_q_value, choose_action with ε=0 and ε=1, update_q_value including missing next state / zero max future Q).
 
 ## Use as a library
 

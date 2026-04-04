@@ -106,3 +106,31 @@ class TestQLearningAgent:
         # Q-learning update: new_q = old_q + lr * (reward + gamma * max_a Q(s',a) - old_q)
         expected = before + agent.learning_rate * (10 + agent.gamma * 0 - before)
         assert abs(after - expected) < 1e-9
+
+    def test_choose_action_epsilon_one_samples_from_actions(self, agent):
+        """With epsilon=1.0, every draw uses random.choice(actions); all values stay in ACTIONS."""
+        random.seed(123)
+        agent.set_q_table()
+        state = next(iter(agent.q_table.keys()))
+        seen = set()
+        for _ in range(80):
+            a = agent.choose_action(state, epsilon=1.0)
+            assert a in ACTIONS
+            seen.add(a)
+        assert seen == set(ACTIONS)
+
+    def test_update_q_value_missing_next_state_max_future_zero(self, agent):
+        """When s' is absent from the Q-table, max_a' Q(s',a') is 0 (terminal or unseen)."""
+        agent.q_table = {}
+        state = ((0, 0), "upward", ((0, 0),), (1, 1))
+        agent.q_table[state] = {a: 0.0 for a in ACTIONS}
+        next_state = ("__not_in_q_table__",)
+        action = ACTIONS[0]
+        reward = -10
+        before = agent.get_q_value(state, action)
+        agent.update_q_value(state, action, reward, next_state)
+        after = agent.get_q_value(state, action)
+        expected = before + agent.learning_rate * (
+            reward + agent.gamma * 0.0 - before
+        )
+        assert abs(after - expected) < 1e-9
