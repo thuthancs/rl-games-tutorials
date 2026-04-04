@@ -78,8 +78,6 @@ Coverage includes:
 
 ## 9. Flowchart (training step / episode)
 
-The diagram uses standard flowchart roles: rounded terminals, rectangles for process, diamond for decision. Rendered from Mermaid (GitHub/Cursor-compatible).
-
 ```mermaid
 flowchart TD
   Start([Start episode]) --> Init[Init game and food]
