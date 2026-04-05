@@ -42,4 +42,4 @@ From `algorithms/multiagent_rl/`:
 python -m pytest tests -v
 ```
 
-See [ALGORITHM.md](ALGORITHM.md) §10 for what the tests cover.
+[`pytest.ini`](pytest.ini) disables the `langsmith` pytest plugin if present (avoids a known collection-time conflict on some setups). See [ALGORITHM.md](ALGORITHM.md) (section on tests) for what the tests cover.

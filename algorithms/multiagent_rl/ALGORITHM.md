@@ -147,11 +147,12 @@ pip install -r requirements-dev.txt
 python -m pytest tests -v
 ```
 
-Automated tests cover:
+[`pytest.ini`](pytest.ini) sets `addopts = -p no:langsmith` so environments with the LangSmith pytest plugin do not crash during test collection.
 
-- **Full-state env:** state shape after `reset`; positions stay in grid after `step`.
-- **Compact env:** state length 4; bounded deltas.
-- **Agent:** `update` changes Q-value; greedy action picks argmax.
+Automated tests:
+
+- [`tests/test_independent_q_learning.py`](tests/test_independent_q_learning.py): **full-state** env `reset` / bounded `step`; Q `update` changes a value; greedy `select_action` picks argmax.
+- [`tests/test_compact_state_smoke.py`](tests/test_compact_state_smoke.py): runs **compact_state** in a **subprocess** so its `env` module does not clash with `independent-q-learning` (same module name on `sys.path`).
 
 **Manual smoke:** `python main.py --quick` inside [`independent-q-learning/`](independent-q-learning/) or [`compact_state/`](compact_state/).
 
